@@ -1,0 +1,42 @@
+--- a/package/Decoder.roc
++++ b/package/Decoder.roc
+@@ -270,39 +270,6 @@
+ 	var $index = index
+ 	while $index < chunk.len() {
+ 		match $decoder.state {
+-			ReadingLine(line) if !line.saw_carriage_return and (line.kind == SimpleLine or line.kind == ErrorLine) and $decoder.offset < $decoder.limits.max_frame_length and line.content.len() < $decoder.limits.max_line_length => {
+-				available = chunk.len() - $index
+-				frame_budget = $decoder.limits.max_frame_length - $decoder.offset
+-				line_budget = $decoder.limits.max_line_length - line.content.len()
+-				limit = available.min(frame_budget).min(line_budget)
+-				var $count = 0.U64
+-				while $count < limit {
+-					byte = get_or_zero(chunk, $index + $count)
+-					if byte == '\r' or byte == '\n' {
+-						break
+-					}
+-					$count = $count + 1
+-				}
+-				if $count > 0 {
+-					# Only received non-terminator bytes are copied. Leave delimiters
+-					# and limit errors to the scalar path so offsets stay identical.
+-					content = line.content.concat(chunk.sublist({ start: $index, len: $count }))
+-					$decoder = { ..$decoder, state: ReadingLine({ ..line, content }), offset: $decoder.offset + $count }
+-					$index = $index + $count
+-				} else {
+-					match step_byte($decoder, get_or_zero(chunk, $index)) {
+-						StepContinue(next_decoder) => {
+-							$decoder = next_decoder
+-						}
+-						StepEmitted({ decoder: next_decoder, value }) => {
+-							$decoder = next_decoder
+-							$completed = $completed.append(value)
+-						}
+-						StepFailed(error) => return Failed({ completed: $completed, error })
+-					}
+-					$index = $index + 1
+-				}
+-			}
+ 			ReadingBulk(bulk) if $decoder.offset < $decoder.limits.max_frame_length => {
+ 				available = chunk.len() - $index
+ 				budget = $decoder.limits.max_frame_length - $decoder.offset

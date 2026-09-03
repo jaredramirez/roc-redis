@@ -1,0 +1,216 @@
+--- a/package/Batch.roc
++++ b/package/Batch.roc
+@@ -77,14 +77,16 @@
+ 				return Err(ReplyCountMismatch({ expected: requests.len(), actual: responses.len() }))
+ 			}
+ 			var $values = List.with_capacity(requests.len())
++			var $remaining = responses
+ 			var $index = 0
+ 			for request in requests {
+-				match responses.get($index) {
+-					Ok(response) => {
++				match $remaining {
++					[response, .. as rest] => {
+ 						value = request.decode(response).map_err(|error| ElementFailed({ index: $index, error }))?
+ 						$values = $values.append(value)
++						$remaining = rest
+ 					}
+-					Err(_) => {
++					[] => {
+ 						return Err(ReplyCountMismatch({ expected: requests.len(), actual: responses.len() }))
+ 					}
+ 				}
+@@ -107,17 +109,17 @@
+ 		return Err(ReplyCountMismatch({ expected: requests.len(), actual: responses.len() }))
+ 	}
+ 	var $values = List.with_capacity(requests.len())
+-	var $index = 0.U64
++	var $remaining = responses
+ 	for request in requests {
+-		match responses.get($index) {
+-			Ok(response) => {
++		match $remaining {
++			[response, .. as rest] => {
+ 				$values = $values.append(request.decode(response))
++				$remaining = rest
+ 			}
+-			Err(_) => {
++			[] => {
+ 				return Err(ReplyCountMismatch({ expected: requests.len(), actual: responses.len() }))
+ 			}
+ 		}
+-		$index = $index + 1
+ 	}
+ 	Ok($values)
+ }
+--- a/package/Command.roc
++++ b/package/Command.roc
+@@ -88,56 +88,15 @@
+ 		size = Command.pipeline_size(commands, limit)?
+ 		var $output = List.with_capacity(size)
+ 		for command in commands {
+-			$output = append_decimal($output.append('*'), command.parts.len()).append('\r').append('\n')
++			$output = $output.append('*').concat(command.parts.len().to_str().to_utf8()).concat(['\r', '\n'])
+ 			for part in command.parts {
+-				$output = append_decimal($output.append('$'), part.len()).append('\r').append('\n').concat(part).append('\r').append('\n')
++				$output = $output.append('$').concat(part.len().to_str().to_utf8()).concat(['\r', '\n']).concat(part).concat(['\r', '\n'])
+ 			}
+ 		}
+ 		Ok($output)
+ 	}
+ }
+ 
+-## Write decimal digits directly into the already reserved wire buffer.
+-## The division guard ensures multiplying the divisor cannot overflow U64.
+-append_decimal : List(U8), U64 -> List(U8)
+-append_decimal = |output, value| {
+-	var $divisor = 1.U64
+-	while value / $divisor >= 10 {
+-		$divisor = $divisor * 10
+-	}
+-	var $output = output
+-	while $divisor > 0 {
+-		$output = $output.append('0' + ((value / $divisor) % 10).to_u8_wrap())
+-		$divisor = $divisor / 10
+-	}
+-	$output
+-}
+-
+-expect append_decimal([], 0) == ['0']
+-expect append_decimal([], 10) == ['1', '0']
+-expect append_decimal([], 18_446_744_073_709_551_615) == "18446744073709551615".to_utf8()
+-
+-expect {
+-	var $value = 0.U64
+-	var $okay = True
+-	while $value <= 1000 {
+-		$okay = $okay and append_decimal([255, 0], $value) == [255, 0].concat($value.to_str().to_utf8())
+-		$value = $value + 1
+-	}
+-	$okay
+-}
+-
+-expect {
+-	var $okay = True
+-	for length in [0.U64, 9, 10, 99, 100, 999, 1000] {
+-		command = Command.echo(List.repeat(255, length))
+-		wire = Command.encode(command)
+-		$okay = $okay and Command.encode_bounded([command], wire.len()) == Ok(wire)
+-		$okay = $okay and Command.encode_bounded([command], wire.len() - 1) == Err(RequestByteLimitExceeded({ limit: wire.len() - 1 }))
+-	}
+-	$okay
+-}
+-
+ consume_size : U64, U64, U64 -> Try(U64, [RequestByteLimitExceeded({ limit : U64 })])
+ consume_size = |remaining, size, limit|
+ 	if size > remaining {
+--- a/package/Decoder.roc
++++ b/package/Decoder.roc
+@@ -176,58 +176,6 @@
+ 	index : U64,
+ }
+ 
+-## Test oracle: process every byte through the scalar state machine. Keep it
+-## independent of the span fast paths to compare fragmentation and limit errors.
+-scalar_feed : Decoder, List(U8) -> Decoder.FeedResult
+-scalar_feed = |decoder, chunk| {
+-	var $decoder = decoder
+-	var $values = []
+-	for byte in chunk {
+-		match step_byte($decoder, byte) {
+-			StepContinue(next) => {
+-				$decoder = next
+-			}
+-			StepEmitted({ decoder: next, value }) => {
+-				$decoder = next
+-				$values = $values.append(value)
+-			}
+-			StepFailed(error) => return Failed({ completed: $values, error })
+-		}
+-	}
+-	Progress({ decoder: $decoder, values: $values })
+-}
+-
+-expect {
+-	frames = ["+PONG\r\n", "-ERR binary\r\n", "+abc\n", "+abcd\rX", "+abcd\r\n:1\r\n", "*2\r\n+abcd\r\n-x\r\n", "+unterminated"].map(Str.to_utf8).concat([
+-		['+', 0, 255, '\r', '\n'],
+-		['-', 255, 0, '\r', '\n'],
+-	])
+-	var $okay = True
+-	for wire in frames {
+-		for line_limit in [1.U64, 3, 4, 5, 100] {
+-			for frame_limit in [1.U64, 4, 6, 7, 100] {
+-				limits = { ..Decoder.default_limits, max_line_length: line_limit, max_frame_length: frame_limit }
+-				var $split = 0.U64
+-				while $split <= wire.len() {
+-					first = wire.take_first($split)
+-					second = wire.drop_first($split)
+-					fast = Decoder.feed(Decoder.with_limits(limits), first)
+-					slow = scalar_feed(Decoder.with_limits(limits), first)
+-					$okay = $okay and Str.inspect(fast) == Str.inspect(slow)
+-					match (fast, slow) {
+-						(Progress({ decoder: fast_decoder, .. }), Progress({ decoder: slow_decoder, .. })) => {
+-							$okay = $okay and Str.inspect(Decoder.feed(fast_decoder, second)) == Str.inspect(scalar_feed(slow_decoder, second))
+-						}
+-						_ => {}
+-					}
+-					$split = $split + 1
+-				}
+-			}
+-		}
+-	}
+-	$okay
+-}
+-
+ new_decoder : Decoder.Limits -> Decoder
+ new_decoder = |limits| {
+ 	limits,
+@@ -244,39 +192,6 @@
+ 	var $index = index
+ 	while $index < chunk.len() {
+ 		match $decoder.state {
+-			ReadingLine(line) if !line.saw_carriage_return and (line.kind == SimpleLine or line.kind == ErrorLine) and $decoder.offset < $decoder.limits.max_frame_length and line.content.len() < $decoder.limits.max_line_length => {
+-				available = chunk.len() - $index
+-				frame_budget = $decoder.limits.max_frame_length - $decoder.offset
+-				line_budget = $decoder.limits.max_line_length - line.content.len()
+-				limit = available.min(frame_budget).min(line_budget)
+-				var $count = 0.U64
+-				while $count < limit {
+-					byte = get_or_zero(chunk, $index + $count)
+-					if byte == '\r' or byte == '\n' {
+-						break
+-					}
+-					$count = $count + 1
+-				}
+-				if $count > 0 {
+-					# Only received non-terminator bytes are copied. Leave delimiters
+-					# and limit errors to the scalar path so offsets stay identical.
+-					content = line.content.concat(chunk.sublist({ start: $index, len: $count }))
+-					$decoder = { ..$decoder, state: ReadingLine({ ..line, content }), offset: $decoder.offset + $count }
+-					$index = $index + $count
+-				} else {
+-					match step_byte($decoder, get_or_zero(chunk, $index)) {
+-						StepContinue(next_decoder) => {
+-							$decoder = next_decoder
+-						}
+-						StepEmitted({ decoder: next_decoder, value }) => {
+-							$decoder = next_decoder
+-							$completed = $completed.append(value)
+-						}
+-						StepFailed(error) => return Failed({ completed: $completed, error })
+-					}
+-					$index = $index + 1
+-				}
+-			}
+ 			ReadingBulk(bulk) if $decoder.offset < $decoder.limits.max_frame_length => {
+ 				available = chunk.len() - $index
+ 				budget = $decoder.limits.max_frame_length - $decoder.offset
+@@ -327,7 +242,7 @@
+ 		StepFailed(FrameLengthLimitExceeded({ at: decoder.offset, limit: decoder.limits.max_frame_length }))
+ 	} else {
+ 		# Detach the old state before passing its payload separately. Keeping
+-		# both aliases here reproduces the pinned LLVM backend's miscompilation.
++		# both aliases here triggers the pinned LLVM backend's ownership bug.
+ 		state = decoder.state
+ 		detached = with_state(decoder, AwaitType)
+ 		match state {

@@ -1,0 +1,13 @@
+roc-redis
+Copyright 2026 roc-redis contributors
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+Redis and its contributors are credited as the source of the public Redis
+command contract used by the generated constructors. This is an independent
+client, not an official or endorsed Redis product. No Redis server source or
+summary documentation prose is included in this package.
+
+The source repository's THIRD_PARTY.md records metadata provenance and the
+separately obtained development platforms and benchmark dependencies. Their
+licenses are not replaced by this project's license.

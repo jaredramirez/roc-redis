@@ -1,0 +1,129 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  generated-properties:
+    name: Generated ${{ matrix.target }} / ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14]
+        target: [resp_round_trip, resp_differential, resp_mutations, command_encoding]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858
+      - name: Run bounded generated properties
+        run: >-
+          nix run .#fuzz-${{ matrix.target }} -- ci .roc-fuzz/report
+          --runs=100000 --seed=20260907 --max-input-size=512
+          --memory-limit=256 --timeout=5
+          --source-revision=${{ github.sha }}
+          --roc-version=nightly-2026-09-07-14d9829
+          --platform-release=0.4.0-rc1
+          --platform-sha256=e045382e6dcb9e04c29b14c6e63949fcb879917f328ab5c7120c5351653ba9b0
+      - name: Preserve runner reports and replay inputs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: generated-${{ matrix.os }}-${{ matrix.target }}
+          path: .roc-fuzz/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+
+  backend-qualification:
+    name: Experimental ${{ matrix.backend }} / ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14]
+        backend: [dev, speed, size]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858
+      - name: Execute production backend qualification
+        run: nix run .#backend-check -- ${{ matrix.backend }}
+
+  nix:
+    name: Hermetic flake checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858
+
+      - name: Check flake
+        run: |
+          nix flake check --all-systems --no-build
+          nix flake check --print-build-logs
+
+  platform-integrations:
+    name: Platform and package integrations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Read pinned Roc version
+        id: roc-version
+        shell: bash
+        run: |
+          version="$(tr -d '\r\n' < .roc-version)"
+          case "$version" in
+            nightly-*) ;;
+            *) echo "invalid .roc-version: $version" >&2; exit 1 ;;
+          esac
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Install pinned Roc nightly
+        uses: roc-lang/setup-roc@cbe782d6f165b89c87d99f50a59ac4f5f73b4427
+        with:
+          version: nightly-new-compiler
+          nightly-tag: ${{ steps.roc-version.outputs.version }}
+
+      - name: Install Redis
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes redis-server redis-tools
+
+      - name: Validate source
+        run: roc --opt=dev scripts/test.roc -- check
+
+      - name: Run package, script, and compiled transport-contract tests
+        run: roc --opt=dev scripts/test.roc -- test
+
+      - name: Test bundled public API
+        run: timeout 300 roc --opt=dev scripts/test-bundle.roc
+
+      - name: Run isolated Redis integration
+        run: timeout 300 roc --opt=dev scripts/test-integration.roc
+
+      - name: Run basic-webserver integration
+        run: timeout 300 roc --opt=dev scripts/test-basic-webserver.roc
+
+      - name: Verify documented compiler issue
+        run: timeout 300 roc --opt=dev scripts/check-known-bug.roc

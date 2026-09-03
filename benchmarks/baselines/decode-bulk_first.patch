@@ -1,0 +1,64 @@
+--- a/package/Decoder.roc
++++ b/package/Decoder.roc
+@@ -270,6 +270,30 @@
+ 	var $index = index
+ 	while $index < chunk.len() {
+ 		match $decoder.state {
++			ReadingBulk(bulk) if $decoder.offset < $decoder.limits.max_frame_length => {
++				available = chunk.len() - $index
++				budget = $decoder.limits.max_frame_length - $decoder.offset
++				payload_count = if bulk.remaining < available {
++					bulk.remaining
++				} else {
++					available
++				}
++				count = if payload_count < budget {
++					payload_count
++				} else {
++					budget
++				}
++				# Append only bytes actually received. An advertised bulk length
++				# alone must not trigger a proportional allocation.
++				content = bulk.content.concat(chunk.sublist({ start: $index, len: count }))
++				state = if count == bulk.remaining {
++					WantBulkCarriageReturn({ content, start: bulk.start })
++				} else {
++					ReadingBulk({ content, start: bulk.start, remaining: bulk.remaining - count })
++				}
++				$decoder = { ..$decoder, state, offset: $decoder.offset + count }
++				$index = $index + count
++			}
+ 			ReadingLine(line) if !line.saw_carriage_return and (line.kind == SimpleLine or line.kind == ErrorLine) and $decoder.offset < $decoder.limits.max_frame_length and line.content.len() < $decoder.limits.max_line_length => {
+ 				available = chunk.len() - $index
+ 				frame_budget = $decoder.limits.max_frame_length - $decoder.offset
+@@ -303,30 +327,6 @@
+ 					$index = $index + 1
+ 				}
+ 			}
+-			ReadingBulk(bulk) if $decoder.offset < $decoder.limits.max_frame_length => {
+-				available = chunk.len() - $index
+-				budget = $decoder.limits.max_frame_length - $decoder.offset
+-				payload_count = if bulk.remaining < available {
+-					bulk.remaining
+-				} else {
+-					available
+-				}
+-				count = if payload_count < budget {
+-					payload_count
+-				} else {
+-					budget
+-				}
+-				# Append only bytes actually received. An advertised bulk length
+-				# alone must not trigger a proportional allocation.
+-				content = bulk.content.concat(chunk.sublist({ start: $index, len: count }))
+-				state = if count == bulk.remaining {
+-					WantBulkCarriageReturn({ content, start: bulk.start })
+-				} else {
+-					ReadingBulk({ content, start: bulk.start, remaining: bulk.remaining - count })
+-				}
+-				$decoder = { ..$decoder, state, offset: $decoder.offset + count }
+-				$index = $index + count
+-			}
+ 			_ => {
+ 				match step_byte($decoder, get_or_zero(chunk, $index)) {
+ 					StepContinue(next_decoder) => {
