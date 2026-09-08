@@ -143,6 +143,9 @@ probe_timeout_seconds = "2s"
 usage : Str
 usage = "usage: roc scripts/benchmark.roc -- [--iterations N] [--warmup N] [--samples N] [--pipeline-batch N] [--timeout-ms N] [--order-rotation 0..9 | --all-order-rotations] [--jsonl PATH]"
 
+# Redis 7.0 redis-cli has no -t option. GNU timeout bounds the whole probe.
+expect !(watchdog_launch_script.contains(" -t ")) and watchdog_launch_script.contains("--kill-after=1s")
+
 watchdog_launch_script : Str
 watchdog_launch_script = Str.join_with(
 	[
@@ -189,7 +192,7 @@ watchdog_launch_script = Str.join_with(
 		"};",
 		"redis_is_owner() { candidate=$1;",
 		"safe_pid \"$candidate\" || return 1;",
-		"info=$(\"$TIMEOUT_PROGRAM\" --signal=TERM --kill-after=1s 1s \"$REDIS_CLI\" --raw -t 0.5 -s \"$REDIS_SOCKET\" INFO server 2>/dev/null) || return 1;",
+		"info=$(\"$TIMEOUT_PROGRAM\" --signal=TERM --kill-after=1s 1s \"$REDIS_CLI\" --raw -s \"$REDIS_SOCKET\" INFO server 2>/dev/null) || return 1;",
 		"printf '%s\\n' \"$info\" | tr -d '\\r' | \"$GREP_PROGRAM\" -Fqx \"process_id:$candidate\";",
 		"};",
 		"(while kill -0 \"$HARNESS_PID\" 2>/dev/null;",
@@ -1180,7 +1183,7 @@ redis_db_size! = |socket_path, expected_pid| {
 
 redis_cli_outcome! : Path.Path, List(Str), Str => Try(ProcessOutput, [BenchmarkFailed(Str), ..])
 redis_cli_outcome! = |socket_path, arguments, limit|
-	run_bounded_output_with_limit!(limit, "redis-cli", ["--raw", "-t", "1", "-s", socket_path.display()].concat(arguments))
+	run_bounded_output_with_limit!(limit, "redis-cli", ["--raw", "-s", socket_path.display()].concat(arguments))
 
 redis_is_owner! : Path.Path, Str => Try(Bool, [BenchmarkFailed(Str), ..])
 redis_is_owner! = |socket_path, expected_pid| {

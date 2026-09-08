@@ -42,6 +42,17 @@ Native checks compare their archive contents with the repository originals.
 
 ## Process supervision
 
+Redis CLI probes use GNU `timeout`, including a forced-kill grace period, instead
+of `redis-cli -t` (not supported by Ubuntu 24.04's Redis 7.0 CLI). Keep the
+non-Nix CI job on distro Redis to exercise that compatibility independently.
+Probe failure must never bypass the exact process-ownership checks.
+
+The September 8 compatibility fix was checked locally on arm64 macOS with a
+source-built Redis 7.0.15 CLI (which rejects `-t`), first against the pinned
+Redis server and then against a source-built 7.0.15 server. Both integration
+harnesses passed, including their lifecycle checks. The full native Nix suite
+also passed with pinned tooling. This is not a rerun of the Ubuntu CI job.
+
 The harnesses remain Roc applications. The qualified fixed shell bridges for
 background launch and parent-death supervision are retained during the upgrade
 to basic-cli 0.23.0-rc1; adopting its new native process/resource APIs is separate

@@ -31,6 +31,9 @@ startup_attempts = 20
 pidfile_attempts : U8
 pidfile_attempts = 100
 
+# Redis 7.0 redis-cli has no -t option. GNU timeout bounds the whole probe.
+expect !(watchdog_launch_script.contains(" -t ")) and watchdog_launch_script.contains("--kill-after=1s")
+
 watchdog_launch_script : Str
 watchdog_launch_script = Str.join_with(
 	[
@@ -51,7 +54,7 @@ watchdog_launch_script = Str.join_with(
 		"redis_is_owner() { candidate=$1;",
 		"safe_pid \"$candidate\" || return 1;",
 		"context_is_owned || return 1;",
-		"info=$(\"$TIMEOUT_PROGRAM\" --signal=TERM --kill-after=1s 1s \"$REDIS_CLI\" --raw -t 0.5 -s \"$REDIS_SOCKET\" INFO server 2>/dev/null) || return 1;",
+		"info=$(\"$TIMEOUT_PROGRAM\" --signal=TERM --kill-after=1s 1s \"$REDIS_CLI\" --raw -s \"$REDIS_SOCKET\" INFO server 2>/dev/null) || return 1;",
 		"info=$(printf '%s' \"$info\" | tr -d '\\r');",
 		"nl='\n';",
 		"case \"$nl$info$nl\" in *\"$nl\"\"process_id:$candidate\"\"$nl\"*) return 0;;",
@@ -59,11 +62,11 @@ watchdog_launch_script = Str.join_with(
 		"esac;",
 		"};",
 		"redis_endpoint_absent() { status=0;",
-		"\"$TIMEOUT_PROGRAM\" --signal=TERM --kill-after=1s 1s \"$REDIS_CLI\" --raw -t 0.5 -s \"$REDIS_SOCKET\" PING >/dev/null 2>&1 || status=$?;",
+		"\"$TIMEOUT_PROGRAM\" --signal=TERM --kill-after=1s 1s \"$REDIS_CLI\" --raw -s \"$REDIS_SOCKET\" PING >/dev/null 2>&1 || status=$?;",
 		"[ \"$status\" -eq 1 ] || return 1;",
 		"sleep 0.05;",
 		"status=0;",
-		"\"$TIMEOUT_PROGRAM\" --signal=TERM --kill-after=1s 1s \"$REDIS_CLI\" --raw -t 0.5 -s \"$REDIS_SOCKET\" PING >/dev/null 2>&1 || status=$?;",
+		"\"$TIMEOUT_PROGRAM\" --signal=TERM --kill-after=1s 1s \"$REDIS_CLI\" --raw -s \"$REDIS_SOCKET\" PING >/dev/null 2>&1 || status=$?;",
 		"[ \"$status\" -eq 1 ];",
 		"};",
 		"(while kill -0 \"$HARNESS_PID\" 2>/dev/null && [ ! -e \"$CLEANUP_REQUEST\" ];",
@@ -1293,7 +1296,7 @@ signal_decision = |alive, owns_identity|
 
 temporary_redis_endpoint_absent! : Str, Str, Path.Path => Try(Bool, [CatalogFailed(Str), ..])
 temporary_redis_endpoint_absent! = |timeout_program, redis_cli, socket_path| {
-	outcome = run_bounded_output_with_limit!(timeout_program, "1s", redis_cli, ["--raw", "-t", "0.5", "-s", socket_path.display(), "PING"])?
+	outcome = run_bounded_output_with_limit!(timeout_program, "1s", redis_cli, ["--raw", "-s", socket_path.display(), "PING"])?
 	if outcome.exit_code == 0 {
 		Ok(Bool.False)
 	} else if outcome.exit_code == 1 {

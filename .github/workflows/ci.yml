@@ -109,6 +109,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes redis-server redis-tools
+          redis-server --version
+          redis-cli --version
 
       - name: Validate source
         run: roc --opt=dev scripts/test.roc -- check

@@ -36,6 +36,9 @@ readiness_attempts = 100
 shell_launch_timeout_seconds : Str
 shell_launch_timeout_seconds = "5"
 
+# Redis 7.0 redis-cli has no -t option. GNU timeout bounds the whole probe.
+expect !(watchdog_script.contains(" -t ")) and watchdog_script.contains("--kill-after=1s")
+
 watchdog_script : Str
 watchdog_script = Str.join_with(
 	[
@@ -62,7 +65,7 @@ watchdog_script = Str.join_with(
 		"redis_is_owner() { candidate=$1;",
 		"safe_pid \"$candidate\" || return 1;",
 		"context_is_owned || return 1;",
-		"info=$(\"$TIMEOUT_PROGRAM\" --signal=TERM --kill-after=1s 1s \"$REDIS_CLI\" --raw -t 0.5 -h 127.0.0.1 -p \"$REDIS_PORT\" INFO server 2>/dev/null) || return 1;",
+		"info=$(\"$TIMEOUT_PROGRAM\" --signal=TERM --kill-after=1s 1s \"$REDIS_CLI\" --raw -h 127.0.0.1 -p \"$REDIS_PORT\" INFO server 2>/dev/null) || return 1;",
 		"info=$(printf '%s' \"$info\" | tr -d '\\r');",
 		"nl='\n';",
 		"case \"$nl$info$nl\" in *\"$nl\"\"process_id:$candidate\"\"$nl\"*) return 0;;",
@@ -70,11 +73,11 @@ watchdog_script = Str.join_with(
 		"esac;",
 		"};",
 		"redis_endpoint_absent() { status=0;",
-		"\"$TIMEOUT_PROGRAM\" --signal=TERM --kill-after=1s 1s \"$REDIS_CLI\" --raw -t 0.5 -h 127.0.0.1 -p \"$REDIS_PORT\" PING >/dev/null 2>&1 || status=$?;",
+		"\"$TIMEOUT_PROGRAM\" --signal=TERM --kill-after=1s 1s \"$REDIS_CLI\" --raw -h 127.0.0.1 -p \"$REDIS_PORT\" PING >/dev/null 2>&1 || status=$?;",
 		"[ \"$status\" -eq 1 ] || return 1;",
 		"sleep 0.05;",
 		"status=0;",
-		"\"$TIMEOUT_PROGRAM\" --signal=TERM --kill-after=1s 1s \"$REDIS_CLI\" --raw -t 0.5 -h 127.0.0.1 -p \"$REDIS_PORT\" PING >/dev/null 2>&1 || status=$?;",
+		"\"$TIMEOUT_PROGRAM\" --signal=TERM --kill-after=1s 1s \"$REDIS_CLI\" --raw -h 127.0.0.1 -p \"$REDIS_PORT\" PING >/dev/null 2>&1 || status=$?;",
 		"[ \"$status\" -eq 1 ];",
 		"};",
 		"(while kill -0 \"$HARNESS_PID\" 2>/dev/null && [ ! -e \"$CLEANUP_REQUEST\" ];",
@@ -767,7 +770,7 @@ server_is_owner! : U16, Str => Bool
 server_is_owner! = |port, expected_pid| {
 	result =
 		Cmd.new_str("timeout")
-			.args_str(["--signal=TERM", "--kill-after=1s", "1", "redis-cli", "--raw", "-t", "0.5", "-h", "127.0.0.1", "-p", port.to_str(), "INFO", "server"])
+			.args_str(["--signal=TERM", "--kill-after=1s", "1", "redis-cli", "--raw", "-h", "127.0.0.1", "-p", port.to_str(), "INFO", "server"])
 			.exec_output!()
 
 	match result {
@@ -779,7 +782,7 @@ server_is_owner! = |port, expected_pid| {
 redis_endpoint_absent! : U16 => Try(Bool, [HarnessFailed(Str), ..])
 redis_endpoint_absent! = |port|
 	match Cmd.new_str("timeout")
-		.args_str(["--signal=TERM", "--kill-after=1s", "1", "redis-cli", "--raw", "-t", "0.5", "-h", "127.0.0.1", "-p", port.to_str(), "PING"])
+		.args_str(["--signal=TERM", "--kill-after=1s", "1", "redis-cli", "--raw", "-h", "127.0.0.1", "-p", port.to_str(), "PING"])
 		.exec_output!() {
 		Ok(_) => Ok(Bool.False)
 		Err(NonZeroExitCode({ exit_code, .. })) if exit_code == 1 => Ok(Bool.True)
