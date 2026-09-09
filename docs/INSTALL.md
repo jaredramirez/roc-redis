@@ -1,7 +1,7 @@
-# Trying the preview
+# Trying 0.1.0-rc1
 
-A public preview URL has not yet been published or verified. Do not treat a
-placeholder or the package's local bundle test as an available release.
+Use the release's exact content-addressed archive URL with Roc
+`nightly-2026-09-07-14d9829`. The dev backend is recommended.
 
 For now, use the checkout's runnable examples:
 
@@ -13,13 +13,13 @@ roc --opt=dev examples/composition.roc
 That example needs no Redis service. The [CLI and webserver connectors](../examples/README.md)
 also show the complete app declaration, pinned platform, config, and transport.
 
-For a sibling application next to a checkout named `roc-redis`, the dependency
-declaration is:
+This complete application needs no Redis server. Save it as `main.roc` and run
+`roc --opt=dev main.roc`; it prints the GET command's parts:
 
 ```roc
 app [main!] {
     pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.23.0-rc1/3hT3SoHZ6qbEsa9qVFLUW3547U5LeoNd1KbpqLpz4r1i.tar.zst",
-    redis: "../roc-redis/package/main.roc",
+	redis: "https://github.com/jaredramirez/roc-redis/releases/download/0.1.0-rc1/D8HziVQtZBUBer5ASdLDqwsFwXwZ2pV5XNQ9C21urvTZ.tar.zst",
 }
 
 import pf.Stdout
@@ -36,6 +36,10 @@ main! = |_args| {
 Use the exact compiler from `.roc-version`, not an arbitrary newer nightly.
 This package is licensed under [Apache 2.0](../LICENSE); preserve the license
 and applicable notices when redistributing it.
-Once the preview is published, replace the local `redis` path with the actual
-content-addressed archive URL from the release and verify that URL using the
-fresh-consumer procedure in [the release checklist](PREVIEW-CHECKLIST.md).
+For a complete TCP read/modify/write application, copy the [README example](../README.md).
+For local development in a sibling directory, replace the Redis URL with
+`../roc-redis/package/main.roc`.
+
+The release URL deliberately includes a fixed tag and filename, not a mutable
+`latest` redirect. Upgrade both together when choosing a newer release.
+Publication validation is recorded in [the release checklist](PREVIEW-CHECKLIST.md).

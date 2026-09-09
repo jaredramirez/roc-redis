@@ -9,9 +9,9 @@ nix run path:.#pooling-demo
 Nix generates ABI glue from the pinned Roc compiler's source, builds the Zig
 host, runs its unit tests, and builds the Roc application. The existing Roc
 integration harness owns Redis startup, timeouts, and cleanup.
-The `pooling-integration` flake check runs the same proof in CI. The initial
-local end-to-end validation is on Apple Silicon macOS; Linux host code has
-been cross-compiled, but Linux execution still needs CI validation.
+The `pooling-integration` flake check runs the same proof in CI. End-to-end
+validation passed locally on Apple Silicon macOS and in the
+[Linux release-qualification run](https://github.com/jaredramirez/roc-redis/actions/runs/34412246159).
 
 The boundary stays small:
 
