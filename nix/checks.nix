@@ -84,6 +84,9 @@ in
       '';
   catalog-live-app = self.packages.${system}.catalog-live;
   redis-integration-app = self.packages.${system}.redis-integration;
+  pooling-integration = pkgs.runCommand "roc-redis-pooling-integration" { } ''
+    ${self.packages.${system}.pooling-demo}/bin/roc-redis-pooling-demo > "$out"
+  '';
   webserver-integration-app = self.packages.${system}.webserver-integration;
 
   project-roc-cache =

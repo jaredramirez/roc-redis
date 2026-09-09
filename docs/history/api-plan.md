@@ -60,7 +60,7 @@ remain pure. Effects enter only through a small byte-stream transport contract.
 ### 1. Module organization
 
 Explore modest namespacing to reduce the current flat collection of modules.
-`Commands.Connection` is a candidate for the Redis connection-command family;
+`Commands.Connect` is a candidate for the Redis connection-command family;
 it must not imply ownership of sockets. Verify supported package/module syntax
 before selecting the layout. Avoid extra wrapper modules solely for appearance.
 

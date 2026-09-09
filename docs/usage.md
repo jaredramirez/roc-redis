@@ -5,14 +5,16 @@
 Bind an already-connected stream and validated config once:
 
 ```roc
-connection : Execute.Connection(_, _)
+import redis.Connection
+
+connection : Connection(_, _)
 connection = {
     config: config,
     read!: |max_bytes| stream.read_up_to!(max_bytes, 2_000)
         .map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
     write_all!: |bytes| stream.write!(bytes, 2_000),
 }
-pong = connection.request!(Commands.Connection.ping())?
+pong = connection.request!(Commands.Connect.ping())?
 results = connection.batch!(batch)?
 ```
 
@@ -281,8 +283,8 @@ remains deliberately out of scope.
 results = Execute.batch!(
     config,
     Batch.each([
-        Commands.Connection.ping(),
-        Commands.Connection.echo("hello"),
+        Commands.Connect.ping(),
+        Commands.Connect.echo("hello"),
     ]),
     transport,
 )?

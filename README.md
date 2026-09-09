@@ -67,7 +67,9 @@ for coordinated updates. Run this example only against disposable data.
 Bind validated config and two byte-stream effects once:
 
 ```roc
-connection : Execute.Connection(_, _)
+import redis.Connection
+
+connection : Connection(_, _)
 connection = {
     config: config,
     read!: |max_bytes| stream.read_up_to!(max_bytes, 2_000)

@@ -21,7 +21,7 @@ import redis.Batch
 import redis.Bytes
 import redis.Commands
 import redis.Config
-import redis.Execute
+import redis.Connection
 
 Context : {
 	redis_host : Str,
@@ -51,12 +51,12 @@ respond! = |request, context| {
 	target = request_target_to_str(request.target())
 		? |message| ServerErr(message)
 	target_bytes = target.to_utf8()
-	echo = Commands.Connection.echo(Bytes.from_list(target_bytes))
+	echo = Commands.Connect.echo(Bytes.from_list(target_bytes))
 
 	stream = Tcp.connect!(context.redis_host, context.redis_port)
 		? |error| ServerErr("connect to Redis: ${Tcp.connect_err_to_str(error)}")
 
-	connection : Execute.Connection(_, _)
+	connection : Connection(_, _)
 	connection = {
 		config: redis_config,
 		read!: |max_bytes|
@@ -65,7 +65,7 @@ respond! = |request, context| {
 		write_all!: |bytes| stream.write!(bytes),
 	}
 
-	result = connection.batch!(Batch.all([Commands.Connection.ping(), echo]))
+	result = connection.batch!(Batch.all([Commands.Connect.ping(), echo]))
 		? |error| ServerErr("Redis pipeline: ${Str.inspect(error)}")
 
 	expected = [Bytes.from_str("PONG"), Bytes.from_list(target_bytes)]

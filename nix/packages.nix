@@ -26,6 +26,10 @@ let
   roc = rocFor system;
   archives = platformArchives pkgs;
   projectRoc = projectRocFor pkgs roc archives;
+  poolingClient = import ./pooling.nix {
+    inherit pkgs roc projectSource;
+    inherit (toolchain) rocCompilerCommit;
+  };
   systemParts = nixpkgs.lib.splitString "-" system;
   benchmarkArch = builtins.elemAt systemParts 0;
   benchmarkOs = builtins.elemAt systemParts 1;
@@ -320,6 +324,22 @@ nixpkgs.lib.filterAttrs
         ${prepareRuntimeCache (primeWebserverCache archives)}
         cd ${projectSource}
         exec ${backendController}/bin/roc-redis-backends "$@"
+      '';
+    };
+
+    pooling-demo = pkgs.writeShellApplication {
+      name = "roc-redis-pooling-demo";
+      runtimeInputs = [
+        pkgs.bash
+        pkgs.coreutils
+        pkgs.redis
+        roc
+      ];
+      text = ''
+        ${prepareRuntimeCache (primeBasicCliCache archives)}
+        export ROC_REDIS_TEST_CLIENT=${poolingClient}/bin/roc-redis-pooling-client
+        cd ${projectSource}
+        exec ${redisIntegrationController}/bin/roc-redis-integration-controller "$@"
       '';
     };
 

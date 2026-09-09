@@ -20,6 +20,7 @@ import redis.Bytes
 import redis.Command
 import redis.Commands as TypedCommands
 import redis.Config
+import redis.Connection
 import redis.Execute
 import redis.NonEmpty
 import redis.Reply
@@ -49,7 +50,7 @@ main! = |args| {
 				.map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
 		write_all!: |bytes| stream.write!(bytes, io_idle_timeout_ms),
 	}
-	connection : Execute.Connection(_, _)
+	connection : Connection(_, _)
 	connection = { config, read!: transport.read!, write_all!: transport.write_all! }
 
 	ping_result = connection.request!(Request.new(Command.ping({}), Reply.simple)) ? |error| client_failure("PING", error)

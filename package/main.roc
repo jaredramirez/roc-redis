@@ -8,6 +8,7 @@ package
 		Command,
 		Commands,
 		Config,
+		Connect,
 		Connection,
 		Decoder,
 		Execute,

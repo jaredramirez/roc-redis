@@ -287,6 +287,7 @@ in
     projectSource
     pkgsFor
     rocNightly
+    rocCompilerCommit
     rocFor
     redisPyVersion
     redisRsVersion

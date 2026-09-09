@@ -1,7 +1,7 @@
 import /Commands/Strings as StringCommands
 import /Commands/HyperLogLog as HyperLogLogCommands
 import /Commands/Transactions as TransactionCommands
-import /Commands/Connection as ConnectionCommands
+import /Commands/Connect as ConnectCommands
 import /Commands/Sets as SetCommands
 import /Commands/Lists as ListCommands
 import /Commands/Hashes as HashCommands
@@ -23,7 +23,7 @@ Commands :: [].{
 	Strings : StringCommands
 	HyperLogLog : HyperLogLogCommands
 	Transactions : TransactionCommands
-	Connection : ConnectionCommands
+	Connect : ConnectCommands
 	Sets : SetCommands
 	Lists : ListCommands
 	Hashes : HashCommands

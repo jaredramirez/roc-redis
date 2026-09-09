@@ -70,6 +70,12 @@
             };
           };
 
+          pooling-demo = {
+            type = "app";
+            program = "${self.packages.${system}.pooling-demo}/bin/roc-redis-pooling-demo";
+            meta.description = "Exercise a minimal Zig TCP pool against isolated Redis";
+          };
+
           redis-integration = {
             type = "app";
             program = "${self.packages.${system}.redis-integration}/bin/roc-redis-integration";
@@ -182,6 +188,7 @@
               pkgs.coreutils
               pkgs.curl
               pkgs.go
+              pkgs.zig
               pkgs.cargo
               pkgs.rustc
               pkgs.rustfmt

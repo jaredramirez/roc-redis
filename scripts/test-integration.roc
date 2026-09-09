@@ -317,6 +317,17 @@ capture_harness_pid! = |_| {
 
 build_client! : Path.Path, Str => Try(Path.Path, [HarnessFailed(Str), ..])
 build_client! = |test_dir, backend| {
+	match Env.var_str!(OsStr.from_str("ROC_REDIS_TEST_CLIENT")) {
+		Ok(path) => {
+			binary = Path.utf8(path)
+			executable = binary.is_executable!() ? |error| HarnessFailed("inspect supplied integration client: ${Str.inspect(error)}")
+			return if executable Ok(binary) else Err(HarnessFailed("integration client is not executable: ${path}"))
+		}
+		Err(VarNotFound(_)) => {}
+		Err(error) => {
+			return Err(HarnessFailed("read ROC_REDIS_TEST_CLIENT: ${Str.inspect(error)}"))
+		}
+	}
 	client_binary = test_dir.join("basic-cli-integration")
 	source = if transport_profile!({}) {
 		"benchmarks/transport.roc"

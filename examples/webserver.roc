@@ -11,7 +11,7 @@ import pf.Tcp
 import http.Response
 import redis.Commands
 import redis.Config
-import redis.Execute
+import redis.Connection
 
 Context : {}
 
@@ -25,14 +25,14 @@ respond! : Server.Request, Context => Try(Server.Outcome, [ServerErr(Str), ..])
 respond! = |_request, _context| {
 	stream = Tcp.connect!("127.0.0.1", 6379)
 		? |error| ServerErr(Tcp.connect_err_to_str(error))
-	connection : Execute.Connection(_, _)
+	connection : Connection(_, _)
 	connection = {
 		config: config,
 		read!: |max_bytes| stream.read_up_to!(max_bytes)
 			.map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
 		write_all!: |bytes| stream.write!(bytes),
 	}
-	pong = connection.request!(Commands.Connection.ping())
+	pong = connection.request!(Commands.Connect.ping())
 		? |_| ServerErr("Redis PING failed")
 	Ok(Server.respond(Response.from_status(200).with_body(pong.to_list())))
 }

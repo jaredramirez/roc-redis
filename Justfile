@@ -65,6 +65,9 @@ benchmark-smoke:
 webserver-integration:
     nix run .#webserver-integration
 
+pooling-demo:
+    nix run path:.#pooling-demo
+
 # Run portable checks, verify known compiler bugs, and exercise live adapters.
 # The exact-version catalog proof remains opt-in for Intel macOS, whose
 # compatibility nixpkgs input currently supplies an older Redis.

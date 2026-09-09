@@ -9,7 +9,7 @@ import pf.Stdout
 import pf.OsStr exposing [OsStr]
 import redis.Commands
 import redis.Config
-import redis.Execute
+import redis.Connection
 
 Ok(config) = Config.default |> Config.build
 
@@ -18,7 +18,7 @@ main! = |_args| {
 	stream = Tcp.connect!("127.0.0.1", 6379, 2_000)
 		? |error| ExampleFailed("connect: ${Str.inspect(error)}")
 
-	connection : Execute.Connection(_, _)
+	connection : Connection(_, _)
 	connection = {
 		config: config,
 		read!: |max_bytes| stream.read_up_to!(max_bytes, 2_000)
@@ -26,7 +26,7 @@ main! = |_args| {
 		write_all!: |bytes| stream.write!(bytes, 2_000),
 	}
 
-	pong = connection.request!(Commands.Connection.ping())
+	pong = connection.request!(Commands.Connect.ping())
 		? |_| ExampleFailed("Redis PING failed")
 
 	text = pong.to_utf8() ? |_| ExampleFailed("PING returned non-UTF-8 bytes")

@@ -38,3 +38,9 @@ The webserver example opens one connection per HTTP request and is a connector
 demonstration, not a pooling or HTTP deployment recommendation. Platform-specific
 timeouts remain the platform's responsibility. See [the API guide](../docs/usage.md) for failure
 categories and when a connection must be discarded.
+
+## Minimal pooled platform
+
+[The Zig pooling demo](pooling/README.md) shows platform-owned checkout,
+reuse/discard, and stale-lease protection. Run `nix run path:.#pooling-demo`.
+It is intentionally single-threaded and loopback-only, not a production pool.

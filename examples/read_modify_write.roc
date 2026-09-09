@@ -11,7 +11,7 @@ import pf.OsStr exposing [OsStr]
 import redis.Bytes
 import redis.Commands
 import redis.Config
-import redis.Execute
+import redis.Connection
 
 Ok(config) = Config.default |> Config.build
 
@@ -19,7 +19,7 @@ main! : List(OsStr) => Try({}, [ExampleFailed(Str), Exit(I32), ..])
 main! = |_args| {
 	stream = Tcp.connect!("127.0.0.1", 6379, 2_000)
 		? |error| ExampleFailed("connect: ${Str.inspect(error)}")
-	connection : Execute.Connection(_, _)
+	connection : Connection(_, _)
 	connection = {
 		config: config,
 		read!: |max_bytes| stream.read_up_to!(max_bytes, 2_000)

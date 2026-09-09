@@ -29,6 +29,7 @@ TestSuite :: [].{
 		{ source: "examples/read_modify_write.roc", expectations: False },
 		{ source: "examples/composition.roc", expectations: True },
 		{ source: "examples/webserver.roc", expectations: False },
+		{ source: "examples/pooling/main.roc", expectations: False },
 	]
 
 	## These must run as built binaries, not just pass `roc check` or `roc test`.

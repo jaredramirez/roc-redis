@@ -1,9 +1,10 @@
 # Module map
 
-Start with `Commands`, `Config`, and `Execute`. Generated raw families cover
+Start with `Commands`, `Config`, and `Connection`. Generated raw families cover
 catalogued commands without semantic decoders. Use `Command.new` for custom or
 extension commands; both can support specialized connection-state protocols.
-Both layers remain public; no module has been renamed.
+Both layers remain public. `Commands.Connect` contains typed connection commands;
+`Connect` is their raw counterpart. Neither owns a transport.
 
 | API path (not import syntax) | Produces or handles | Source |
 | --- | --- | --- |
@@ -12,7 +13,7 @@ Both layers remain public; no module has been renamed.
 | `redis.Command` | Binary command construction and encoding | `package/Command.roc` |
 | `redis.Request`, `redis.Batch`, `redis.NoReply` | Plans for one reply, a batch, or suppressed replies | Corresponding package modules |
 | `redis.Execute` | Validated exchange using supplied effectful functions | `package/Execute.roc` |
-| `redis.Execute.Connection` | Nominal config/effect bundle with `request!` and `batch!` methods | `package/Execute.roc` |
+| `redis.Connection` | Nominal config/effect bundle with `request!` and `batch!` methods | `package/Connection.roc` |
 | `redis.Config` | Pure settings builder and final validation | `package/Config.roc` |
 | `redis.Decoder`, `redis.Resp` | Incremental RESP2 framing and wire values | Corresponding package modules |
 | `redis.Reply` | Pure semantic decoders and explicit UTF-8 validation | `package/Reply.roc` |

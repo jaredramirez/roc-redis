@@ -177,7 +177,7 @@ module_policies = [
 	{ group: "array", module_name: "Arrays", count: 18 },
 	{ group: "module", module_name: "VectorSets", count: 13 },
 	{ group: "cluster", module_name: "Cluster", count: 32 },
-	{ group: "connection", module_name: "Connection", count: 24 },
+	{ group: "connection", module_name: "Connect", count: 24 },
 	{ group: "pubsub", module_name: "PubSub", count: 13 },
 	{ group: "scripting", module_name: "Scripting", count: 19 },
 	{ group: "server", module_name: "Server", count: 69 },
@@ -2815,7 +2815,7 @@ group_title = |group|
 		"geo" => "Geo"
 		"array" => "Array"
 		"cluster" => "Cluster"
-		"connection" => "Connection"
+		"connection" => "Connect"
 		"pubsub" => "Pub/Sub"
 		"scripting" => "Scripting"
 		"server" => "Server"

@@ -14,6 +14,7 @@ import redis.Bytes
 import redis.Command
 import redis.Config
 import redis.Decoder
+import redis.Connection
 import redis.Execute
 import redis.NoReply
 import redis.Reply
@@ -420,13 +421,13 @@ fail = |message| Err(ContractFailed(message))
 # Exercise the bound API against the full existing success/failure matrix.
 # The separate transport-properties matrix still covers the unbound functions.
 connection_request! = |config, request, transport| {
-	connection : Execute.Connection(_, _)
+	connection : Connection(_, _)
 	connection = { config, read!: transport.read!, write_all!: transport.write_all! }
 	connection.request!(request)
 }
 
 connection_batch! = |config, batch, transport| {
-	connection : Execute.Connection(_, _)
+	connection : Connection(_, _)
 	connection = { config, read!: transport.read!, write_all!: transport.write_all! }
 	connection.batch!(batch)
 }

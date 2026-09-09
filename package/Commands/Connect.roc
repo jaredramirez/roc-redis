@@ -8,7 +8,7 @@ import /Resp
 ## Commands affecting connection state do not create or own a transport.
 ## Ordinary requests here require RESP2 command mode, replies enabled, and no
 ## active MULTI. See Transactions.queued for use within a transaction.
-Connection :: [].{
+Connect :: [].{
 	Credentials : [Password(Bytes.Bytes), User({ username : Bytes.Bytes, password : Bytes.Bytes })]
 	ClientType : [Normal, Master, Slave, Replica, PubSub]
 	ListOptions := { kind : Reply.Optional(ClientType) ?? Absent, ids : List(U64) ?? [] }
@@ -253,7 +253,7 @@ yes_no = |enabled| if enabled {
 	"NO"
 }
 
-client_type : Connection.ClientType -> Bytes.Bytes
+client_type : Connect.ClientType -> Bytes.Bytes
 client_type = |kind| match kind {
 	Normal => "NORMAL"
 	Master => "MASTER"
@@ -265,12 +265,12 @@ client_type = |kind| match kind {
 bulk : Resp.Resp -> Try(Bytes.Bytes, Reply.Error)
 bulk = |reply| Reply.bulk(reply).map_ok(Bytes.from_list)
 
-expect Connection.auth(User({ username: "user", password: "secret" })).command() == Command.new("AUTH", ["user", "secret"])
-expect Connection.ping().decode(Resp.simple_utf8("PONG")) == Ok(Bytes.from_str("PONG"))
-expect Connection.echo(Bytes.from_list([0, 255])).decode(Resp.BulkString([0, 255])) == Ok(Bytes.from_list([0, 255]))
-expect Connection.client_get_name({}).decode(Resp.NullBulkString) == Ok(Absent)
-expect Connection.client_get_name({}).decode(Resp.NullArray).is_err()
-expect Connection.client_list(Connection.ListOptions.{ kind: Present(Replica), ids: [42, 43] }).command() == Command.new("CLIENT", ["LIST", "TYPE", "REPLICA", "ID", "42", "43"])
-expect Connection.client_reply(Skip) == Command.new("CLIENT", ["REPLY", "SKIP"])
-expect Connection.client_tracking(On(Connection.TrackingOptions.{ mode: Broadcast(["prefix"]), no_loop: True })) == Command.new("CLIENT", ["TRACKING", "ON", "BCAST", "PREFIX", "prefix", "NOLOOP"])
-expect Connection.hello(Resp2, Connection.HelloOptions.{}) == Command.new("HELLO", ["2"])
+expect Connect.auth(User({ username: "user", password: "secret" })).command() == Command.new("AUTH", ["user", "secret"])
+expect Connect.ping().decode(Resp.simple_utf8("PONG")) == Ok(Bytes.from_str("PONG"))
+expect Connect.echo(Bytes.from_list([0, 255])).decode(Resp.BulkString([0, 255])) == Ok(Bytes.from_list([0, 255]))
+expect Connect.client_get_name({}).decode(Resp.NullBulkString) == Ok(Absent)
+expect Connect.client_get_name({}).decode(Resp.NullArray).is_err()
+expect Connect.client_list(Connect.ListOptions.{ kind: Present(Replica), ids: [42, 43] }).command() == Command.new("CLIENT", ["LIST", "TYPE", "REPLICA", "ID", "42", "43"])
+expect Connect.client_reply(Skip) == Command.new("CLIENT", ["REPLY", "SKIP"])
+expect Connect.client_tracking(On(Connect.TrackingOptions.{ mode: Broadcast(["prefix"]), no_loop: True })) == Command.new("CLIENT", ["TRACKING", "ON", "BCAST", "PREFIX", "prefix", "NOLOOP"])
+expect Connect.hello(Resp2, Connect.HelloOptions.{}) == Command.new("HELLO", ["2"])
