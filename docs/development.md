@@ -22,6 +22,25 @@ builds or other benchmarks. See [perf.md](../perf.md) for evidence and caveats.
 
 ## Setup structure
 
+### API documentation
+
+[Hosted API documentation](https://jaredramirez.github.io/roc-redis/) tracks
+`main`, not a specific release. `.github/workflows/pages.yml` generates it with
+the pinned Roc compiler and deploys through GitHub Pages on pushes to `main`
+or manual workflow dispatch. Generated HTML is not committed.
+
+Run `just docs` to generate `generated-docs/`, or preview it locally with:
+
+```sh
+nix develop path:. --command roc docs package/main.roc --output=generated-docs --serve
+```
+
+This site contains Roc API documentation; the Markdown guides remain in the
+repository. The workflow verifies the landing page, main API entry points,
+stylesheet, and search script exist before deploying.
+
+### Build and test ownership
+
 - `flake.nix`: inputs, public apps, development shells, output wiring.
 - `nix/toolchain.nix`: immutable compiler/platform pins, caches, source filtering,
   and benchmark dependency versions.

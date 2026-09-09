@@ -3,6 +3,8 @@
 A binary-safe, platform-agnostic Redis client for Roc. Pure command construction
 and RESP2 decoding; your platform supplies the byte-stream effects.
 
+[API documentation (development / main)](https://jaredramirez.github.io/roc-redis/)
+
 **Community preview:** targets `nightly-2026-09-07-14d9829`. Use the dev backend
 by default; speed and size remain experimental. The API is open to feedback.
 

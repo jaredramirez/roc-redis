@@ -60,7 +60,8 @@ publish another version if package contents change.
   Redis on 46379, executed the read/modify/write app successfully, and cleaned up.
 - The no-server application in `INSTALL.md` also ran successfully against the
   public release and printed the GET command's parts.
-- API documentation generation passed locally. GitHub Pages is not yet configured.
+- API documentation generation passed locally. For current hosting and local
+  preview instructions, see [the development map](development.md#api-documentation).
 
 ## Local preparation checks (September 8)
 
