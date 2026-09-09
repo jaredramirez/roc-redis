@@ -33,8 +33,8 @@ Connection :: [].{
 		Reply.okay,
 	)
 
-	ping : {} -> Request.Request(Bytes.Bytes, Reply.Error)
-	ping = |_| Request.new(Command.new("PING", []), |reply| Reply.simple(reply).map_ok(Bytes.from_list))
+	ping : () -> Request.Request(Bytes.Bytes, Reply.Error)
+	ping = || Request.new(Command.new("PING", []), |reply| Reply.simple(reply).map_ok(Bytes.from_list))
 
 	ping_with_message : Bytes.Bytes -> Request.Request(Bytes.Bytes, Reply.Error)
 	ping_with_message = |message| Request.new(Command.new("PING", [message]), bulk)
@@ -266,7 +266,7 @@ bulk : Resp.Resp -> Try(Bytes.Bytes, Reply.Error)
 bulk = |reply| Reply.bulk(reply).map_ok(Bytes.from_list)
 
 expect Connection.auth(User({ username: "user", password: "secret" })).command() == Command.new("AUTH", ["user", "secret"])
-expect Connection.ping({}).decode(Resp.simple_utf8("PONG")) == Ok(Bytes.from_str("PONG"))
+expect Connection.ping().decode(Resp.simple_utf8("PONG")) == Ok(Bytes.from_str("PONG"))
 expect Connection.echo(Bytes.from_list([0, 255])).decode(Resp.BulkString([0, 255])) == Ok(Bytes.from_list([0, 255]))
 expect Connection.client_get_name({}).decode(Resp.NullBulkString) == Ok(Absent)
 expect Connection.client_get_name({}).decode(Resp.NullArray).is_err()

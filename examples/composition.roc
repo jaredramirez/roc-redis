@@ -24,7 +24,7 @@ decode_text = |reply| {
 
 plan = Batch.map2(Batch.one(count_request), Batch.one(text_request), |count, text| { count, text })
 
-# Execute.batch!(config, plan, transport) would send both commands in one
+# connection.batch!(plan) would send both commands in one
 # exchange. Here we supply replies directly to demonstrate the pure API.
 main! = |_args| {
 	Stdout.line!(summarize(plan.decode([Resp.Integer(3), Resp.bulk_utf8("hello")])))?

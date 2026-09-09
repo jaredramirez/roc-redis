@@ -56,15 +56,16 @@ respond! = |request, context| {
 	stream = Tcp.connect!(context.redis_host, context.redis_port)
 		? |error| ServerErr("connect to Redis: ${Tcp.connect_err_to_str(error)}")
 
-	transport : Execute.Transport(_, _)
-	transport = {
+	connection : Execute.Connection(_, _)
+	connection = {
+		config: redis_config,
 		read!: |max_bytes|
 			stream.read_up_to!(max_bytes)
 				.map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
 		write_all!: |bytes| stream.write!(bytes),
 	}
 
-	result = Execute.batch!(redis_config, Batch.all([Commands.Connection.ping({}), echo]), transport)
+	result = connection.batch!(Batch.all([Commands.Connection.ping(), echo]))
 		? |error| ServerErr("Redis pipeline: ${Str.inspect(error)}")
 
 	expected = [Bytes.from_str("PONG"), Bytes.from_list(target_bytes)]

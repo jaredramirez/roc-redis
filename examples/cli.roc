@@ -17,14 +17,18 @@ main! : List(OsStr) => Try({}, [ExampleFailed(Str), Exit(I32), ..])
 main! = |_args| {
 	stream = Tcp.connect!("127.0.0.1", 6379, 2_000)
 		? |error| ExampleFailed("connect: ${Str.inspect(error)}")
-	transport : Execute.Transport(_, _)
-	transport = {
+
+	connection : Execute.Connection(_, _)
+	connection = {
+		config: config,
 		read!: |max_bytes| stream.read_up_to!(max_bytes, 2_000)
 			.map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
 		write_all!: |bytes| stream.write!(bytes, 2_000),
 	}
-	pong = Execute.request!(config, Commands.Connection.ping({}), transport)
+
+	pong = connection.request!(Commands.Connection.ping())
 		? |_| ExampleFailed("Redis PING failed")
+
 	text = pong.to_utf8() ? |_| ExampleFailed("PING returned non-UTF-8 bytes")
 	Stdout.line!(text) ? |error| ExampleFailed("stdout: ${Str.inspect(error)}")
 	Ok({})

@@ -107,7 +107,7 @@ test_long_fragmented_exchange! = |seed| {
 			Err(InvalidReadLimit)
 		},
 	}
-	actual = Execute.request!(policy, Request.new(Command.echo($payload), Reply.bulk), transport) ? |error| ContractFailed(Str.inspect(error))
+	actual = connection_request!(policy, Request.new(Command.echo($payload), Reply.bulk), transport) ? |error| ContractFailed(Str.inspect(error))
 	if actual == $payload {
 		Ok({})
 	} else {
@@ -129,7 +129,7 @@ test_execute_failures! = |_| {
 	request = Request.new(Command.ping({}), Reply.simple)
 	read_failure : Execute.Transport(_, _)
 	read_failure = { write_all!: |_| Ok({}), read!: |_| Err(TimedOut) }
-	match Execute.request!(execution_config, request, read_failure) {
+	match connection_request!(execution_config, request, read_failure) {
 		Err(ExchangeFailed(ReadFailed(TimedOut))) => {}
 		_ => {
 			return fail("Execute lost the concrete read error")
@@ -137,7 +137,7 @@ test_execute_failures! = |_| {
 	}
 	eof : Execute.Transport(_, _)
 	eof = { write_all!: |_| Ok({}), read!: |_| Ok(End) }
-	match Execute.request!(execution_config, request, eof) {
+	match connection_request!(execution_config, request, eof) {
 		Err(ExchangeFailed(ConnectionClosed({ expected: 1, received: 0 }))) => {}
 		_ => {
 			return fail("Execute did not distinguish clean EOF from read failure")
@@ -145,7 +145,7 @@ test_execute_failures! = |_| {
 	}
 	empty : Execute.Transport(_, _)
 	empty = { write_all!: |_| Ok({}), read!: |_| Ok(Data([])) }
-	match Execute.request!(execution_config, request, empty) {
+	match connection_request!(execution_config, request, empty) {
 		Err(ExchangeFailed(EmptyData)) => {}
 		_ => {
 			return fail("Execute accepted an empty data read")
@@ -153,7 +153,7 @@ test_execute_failures! = |_| {
 	}
 	oversized : Execute.Transport(_, _)
 	oversized = { write_all!: |_| Ok({}), read!: |_| Ok(Data("+PONG\r\n".to_utf8())) }
-	match Execute.request!(short_read_config, request, oversized) {
+	match connection_request!(short_read_config, request, oversized) {
 		Err(ExchangeFailed(ReadLimitExceeded({ actual: 7, limit: 3 }))) => {}
 		_ => {
 			return fail("Execute accepted bytes exceeding the requested read size")
@@ -168,7 +168,7 @@ test_execute_failures! = |_| {
 			Err(ReadPastBudget)
 		},
 	}
-	match Execute.request!(response_budget_config, request, budget) {
+	match connection_request!(response_budget_config, request, budget) {
 		Err(ExchangeFailed(ResponseByteLimitExceeded({ limit: 6 }))) => {}
 		_ => {
 			return fail("Execute read past its cumulative response budget")
@@ -176,7 +176,7 @@ test_execute_failures! = |_| {
 	}
 	untouched : Execute.Transport(_, _)
 	untouched = { write_all!: |_| Err(WriteMustNotRun), read!: |_| Err(ReadMustNotRun) }
-	match Execute.batch!(single_command_config, Batch.each([request, request]), untouched) {
+	match connection_batch!(single_command_config, Batch.each([request, request]), untouched) {
 		Err(RequestRejected(CommandLimitExceeded({ actual: 2, limit: 1 }))) => {}
 		_ => {
 			return fail("Execute failed to enforce command count before effects")
@@ -185,7 +185,7 @@ test_execute_failures! = |_| {
 	for suffix in ["+EXTRA\r\n", "+"] {
 		extra : Execute.Transport(_, _)
 		extra = { write_all!: |_| Ok({}), read!: |_| Ok(Data("+PONG\r\n${suffix}".to_utf8())) }
-		match Execute.request!(execution_config, request, extra) {
+		match connection_request!(execution_config, request, extra) {
 			Err(ExchangeFailed(UnexpectedData(_))) => {}
 			_ => {
 				return fail("Execute accepted an extra complete or partial response")
@@ -194,7 +194,7 @@ test_execute_failures! = |_| {
 	}
 	malformed : Execute.Transport(_, _)
 	malformed = { write_all!: |_| Ok({}), read!: |_| Ok(Data("+PONG\r\n?".to_utf8())) }
-	match Execute.batch!(execution_config, Batch.each([request, request]), malformed) {
+	match connection_batch!(execution_config, Batch.each([request, request]), malformed) {
 		Err(ExchangeFailed(ProtocolFailure({ completed: 1, .. }))) => {}
 		_ => {
 			return fail("Execute lost the completed prefix on malformed protocol")
@@ -202,7 +202,7 @@ test_execute_failures! = |_| {
 	}
 	wrong_shape : Execute.Transport(_, _)
 	wrong_shape = { write_all!: |_| Ok({}), read!: |_| Ok(Data(":1\r\n".to_utf8())) }
-	match Execute.request!(execution_config, request, wrong_shape) {
+	match connection_request!(execution_config, request, wrong_shape) {
 		Err(ReplyDecodeFailure(UnexpectedReply(_))) => {}
 		_ => {
 			return fail("Execute conflated semantic decoding with protocol failure")
@@ -229,7 +229,7 @@ test_execute! = |_| {
 		},
 		read!: |_| Ok(Data("+PONG\r\n".to_utf8())),
 	}
-	match Execute.request!(execution_config, request, transport) {
+	match connection_request!(execution_config, request, transport) {
 		Ok(bytes) if bytes == "PONG".to_utf8() => {}
 		_ => {
 			return fail("Execute.request! did not return the decoded value")
@@ -237,13 +237,13 @@ test_execute! = |_| {
 	}
 	untouched : Execute.Transport(_, _)
 	untouched = { write_all!: |_| Err(WriteMustNotRun), read!: |_| Err(ReadMustNotRun) }
-	match Execute.request!(tiny_execution_config, request, untouched) {
+	match connection_request!(tiny_execution_config, request, untouched) {
 		Err(RequestRejected(RequestByteLimitExceeded({ limit: 13 }))) => {}
 		_ => {
 			return fail("Execute.request! failed to reject oversized output before effects")
 		}
 	}
-	match Execute.request!(execution_config, request, untouched) {
+	match connection_request!(execution_config, request, untouched) {
 		Err(ExchangeFailed(WriteFailed(WriteMustNotRun))) => {}
 		_ => {
 			return fail("Execute.request! did not classify a failed write")
@@ -251,7 +251,7 @@ test_execute! = |_| {
 	}
 	server_error : Execute.Transport(_, _)
 	server_error = { write_all!: |_| Ok({}), read!: |_| Ok(Data("-ERR bad\r\n".to_utf8())) }
-	match Execute.request!(execution_config, request, server_error) {
+	match connection_request!(execution_config, request, server_error) {
 		Err(ServerError(bytes)) if bytes == Bytes.from_str("ERR bad") => {}
 		_ => {
 			return fail("Execute.request! did not preserve Redis error bytes")
@@ -273,13 +273,13 @@ test_execute! = |_| {
 		},
 		read!: |_| Ok(Data(":1\r\n+wrong\r\n:3\r\n".to_utf8())),
 	}
-	match Execute.batch!(execution_config, Batch.each([integer_request, integer_request, integer_request]), batch_transport) {
+	match connection_batch!(execution_config, Batch.each([integer_request, integer_request, integer_request]), batch_transport) {
 		Ok([Ok(1), Err(ReplyDecodeFailure(NotInteger)), Ok(3)]) => {}
 		_ => {
 			return fail("Execute.batch! lost an element result after a semantic failure")
 		}
 	}
-	match Execute.batch!(execution_config, Batch.each([]), untouched) {
+	match connection_batch!(execution_config, Batch.each([]), untouched) {
 		Ok([]) => {}
 		_ => {
 			return fail("empty Execute.batch! performed effects")
@@ -330,7 +330,7 @@ test_migrated_regressions! = |_| {
 				_ => Err(UnexpectedReadLimit(limit))
 			},
 		}
-		result = Execute.request!(split_config, request, transport)
+		result = connection_request!(split_config, request, transport)
 		match (ended, result) {
 			(False, Ok(bytes)) if bytes == "PONG".to_utf8() => {}
 			(True, Err(ExchangeFailed(ProtocolFailure({ completed: 0, error: UnexpectedEnd({ at: 4, .. }) })))) => {}
@@ -339,7 +339,7 @@ test_migrated_regressions! = |_| {
 	}
 	bulk_transport : Execute.Transport(_, _)
 	bulk_transport = { write_all!: |_| Ok({}), read!: |_| Ok(Data("$2\r\nhi\r\n".to_utf8())) }
-	match Execute.request!(bulk_limit_config, request, bulk_transport) {
+	match connection_request!(bulk_limit_config, request, bulk_transport) {
 		Err(ExchangeFailed(ProtocolFailure({ completed: 0, error: BulkLengthLimitExceeded({ actual: 2, limit: 1, .. }) }))) => {}
 		_ => return fail("configured decoder bulk bound was not enforced through Execute")
 	}
@@ -352,7 +352,7 @@ test_migrated_regressions! = |_| {
 			Err(UnexpectedReadLimit(limit))
 		},
 	}
-	match Execute.batch!(batch_budget_config, Batch.each([request, request]), budget_transport) {
+	match connection_batch!(batch_budget_config, Batch.each([request, request]), budget_transport) {
 		Err(ExchangeFailed(ResponseByteLimitExceeded({ limit: 9 }))) => {}
 		_ => return fail("response budget reset between batch elements")
 	}
@@ -368,7 +368,7 @@ test_migrated_regressions! = |_| {
 		read!: |_| Ok(Data("+PONG\r\n$4\r\n".to_utf8().concat(binary).concat(['\r', '\n']))),
 	}
 	raw_batch = Batch.each(commands.map(|command| Request.new(command, |reply| Ok(reply))))
-	match Execute.batch!(execution_config, raw_batch, binary_transport) {
+	match connection_batch!(execution_config, raw_batch, binary_transport) {
 		Ok([Ok(Resp.SimpleString(pong)), Ok(Resp.BulkString(value))]) if pong == "PONG".to_utf8() and value == binary => {}
 		_ => return fail("batch lost wire ordering or arbitrary binary values")
 	}
@@ -383,7 +383,7 @@ test_migrated_regressions! = |_| {
 			},
 		}
 		okay = Request.new(Command.ping({}), Reply.okay)
-		failure = Execute.request!(reuse_config, okay, transport)
+		failure = connection_request!(reuse_config, okay, transport)
 		match failure {
 			Err(ServerError(bytes)) if bytes == Bytes.from_str("ERR rejected") => {}
 			Err(ReplyDecodeFailure(UnexpectedReply({ actual: Resp.Integer(1), expected: OkayReply }))) => {}
@@ -398,7 +398,7 @@ test_migrated_regressions! = |_| {
 				Err(UnexpectedReadLimit(limit))
 			},
 		}
-		match Execute.request!(reuse_config, okay, following) {
+		match connection_request!(reuse_config, okay, following) {
 			Ok({}) => {}
 			_ => return fail("configuration was not reusable after an aligned reply failure")
 		}
@@ -416,3 +416,17 @@ test_migrated_regressions! = |_| {
 
 fail : Str -> Try({}, [ContractFailed(Str), ..])
 fail = |message| Err(ContractFailed(message))
+
+# Exercise the bound API against the full existing success/failure matrix.
+# The separate transport-properties matrix still covers the unbound functions.
+connection_request! = |config, request, transport| {
+	connection : Execute.Connection(_, _)
+	connection = { config, read!: transport.read!, write_all!: transport.write_all! }
+	connection.request!(request)
+}
+
+connection_batch! = |config, batch, transport| {
+	connection : Execute.Connection(_, _)
+	connection = { config, read!: transport.read!, write_all!: transport.write_all! }
+	connection.batch!(batch)
+}

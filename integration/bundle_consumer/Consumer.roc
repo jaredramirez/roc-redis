@@ -6,6 +6,7 @@ import redis.Cluster as RawCluster
 import redis.Command
 import redis.Commands
 import redis.Config
+import redis.Execute
 import redis.Connection as RawConnection
 import redis.Decoder
 import redis.Geo as RawGeo
@@ -31,7 +32,20 @@ import redis.VectorSets as RawVectorSets
 ## A minimal downstream consumer which exercises every public module from the
 ## packaged archive. Package dependencies fetched by URL do not run their own
 ## expectations, so these checks intentionally live in the consumer.
-Consumer := [].{}
+Consumer := [].{
+
+	## Type-check nominal construction and dispatch across the bundle boundary.
+	request! = |config, transport, request| {
+		connection : Execute.Connection(_, _)
+		connection = { config, read!: transport.read!, write_all!: transport.write_all! }
+		connection.request!(request)
+	}
+	batch! = |config, transport, batch| {
+		connection : Execute.Connection(_, _)
+		connection = { config, read!: transport.read!, write_all!: transport.write_all! }
+		connection.batch!(batch)
+	}
+}
 
 Ok(configured) = Config.default |> Config.with_read_size(32_768) |> Config.build
 

@@ -49,8 +49,10 @@ main! = |args| {
 				.map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
 		write_all!: |bytes| stream.write!(bytes, io_idle_timeout_ms),
 	}
+	connection : Execute.Connection(_, _)
+	connection = { config, read!: transport.read!, write_all!: transport.write_all! }
 
-	ping_result = Execute.request!(config, Request.new(Command.ping({}), Reply.simple), transport) ? |error| client_failure("PING", error)
+	ping_result = connection.request!(Request.new(Command.ping({}), Reply.simple)) ? |error| client_failure("PING", error)
 	if ping_result != "PONG".to_utf8() {
 		return Err(IntegrationFailed("PING did not return PONG"))
 	}
@@ -59,18 +61,18 @@ main! = |args| {
 	# an interrupted test which cannot reach the explicit DEL below. Validate
 	# NX immediately so a random collision is never read or deleted.
 	set_request = TypedCommands.Strings.set(Bytes.from_list(test_key), Bytes.from_list(test_value), { condition: IfMissing, expiration: Milliseconds(60_000) })
-	set_result = Execute.request!(config, set_request, transport) ? |error| client_failure("SET", error)
+	set_result = connection.request!(set_request) ? |error| client_failure("SET", error)
 	if set_result != Applied {
 		return Err(IntegrationFailed("SET did not acquire the random test key; leaving it untouched"))
 	}
 
-	get_result = Execute.request!(config, TypedCommands.Strings.get(Bytes.from_list(test_key)), transport) ? |error| client_failure("GET", error)
+	get_result = connection.request!(TypedCommands.Strings.get(Bytes.from_list(test_key))) ? |error| client_failure("GET", error)
 
 	echo_command = Command.echo(test_value)
-	pipeline_result = Execute.batch!(config, Batch.each([Request.new(Command.ping({}), Reply.simple), Request.new(echo_command, Reply.bulk)]), transport) ? |error| client_failure("pipeline", error)
+	pipeline_result = connection.batch!(Batch.each([Request.new(Command.ping({}), Reply.simple), Request.new(echo_command, Reply.bulk)])) ? |error| client_failure("pipeline", error)
 
 	TypedCases.run!(Bytes.from_list(test_key), config, transport) ? |message| IntegrationFailed(message)
-	del_result = Execute.request!(config, TypedCommands.Keyspace.del(NonEmpty.new(Bytes.from_list(test_key), [])), transport) ? |error| client_failure("DEL", error)
+	del_result = connection.request!(TypedCommands.Keyspace.del(NonEmpty.new(Bytes.from_list(test_key), []))) ? |error| client_failure("DEL", error)
 
 	# Validate after DEL so ordinary assertion failures do not leave state behind.
 	if get_result != Present(Bytes.from_list(test_value)) {

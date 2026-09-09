@@ -1,5 +1,32 @@
 # API and operational guide
 
+## Bound execution (recommended)
+
+Bind an already-connected stream and validated config once:
+
+```roc
+connection : Execute.Connection(_, _)
+connection = {
+    config: config,
+    read!: |max_bytes| stream.read_up_to!(max_bytes, 2_000)
+        .map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
+    write_all!: |bytes| stream.write!(bytes, 2_000),
+}
+pong = connection.request!(Commands.Connection.ping())?
+results = connection.batch!(batch)?
+```
+
+`Connection` is a transparent nominal record. It delegates to the same execution
+logic as the unbound `Execute.request!` and `Execute.batch!` forms documented
+below; result types, limits, and failure guarantees are unchanged. Request and
+batch plans remain pure and reusable, including custom decoders. No per-command
+methods or hidden retries are added.
+
+This value does not acquire or close a socket, enforce exclusive access, or
+invalidate aliases after a failure. The application must still discard the
+stream after `ExchangeFailed`. `Execute.no_reply!` remains separate and requires
+only a write capability, not a full reply-reading connection.
+
 A binary-safe, platform-agnostic Redis client package for Roc.
 
 **Community preview.** Targets `nightly-2026-09-07-14d9829` and RESP2. Use the
@@ -254,7 +281,7 @@ remains deliberately out of scope.
 results = Execute.batch!(
     config,
     Batch.each([
-        Commands.Connection.ping({}),
+        Commands.Connection.ping(),
         Commands.Connection.echo("hello"),
     ]),
     transport,

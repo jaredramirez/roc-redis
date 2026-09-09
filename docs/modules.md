@@ -12,6 +12,7 @@ Both layers remain public; no module has been renamed.
 | `redis.Command` | Binary command construction and encoding | `package/Command.roc` |
 | `redis.Request`, `redis.Batch`, `redis.NoReply` | Plans for one reply, a batch, or suppressed replies | Corresponding package modules |
 | `redis.Execute` | Validated exchange using supplied effectful functions | `package/Execute.roc` |
+| `redis.Execute.Connection` | Nominal config/effect bundle with `request!` and `batch!` methods | `package/Execute.roc` |
 | `redis.Config` | Pure settings builder and final validation | `package/Config.roc` |
 | `redis.Decoder`, `redis.Resp` | Incremental RESP2 framing and wire values | Corresponding package modules |
 | `redis.Reply` | Pure semantic decoders and explicit UTF-8 validation | `package/Reply.roc` |
@@ -32,7 +33,7 @@ custom = Request.new(raw, Reply.bulk_or_null)
 
 Import `redis.Commands`, then access `Commands.Strings.get`. `Commands.Strings`
 is a family exposed through the namespace value, not a separate import needed
-for ordinary calls. `Execute.request!` takes a `Request`, not a raw `Command`;
+for ordinary calls. `connection.request!` takes a `Request`, not a raw `Command`;
 `Request.new(raw, decoder)` is the explicit bridge when you want custom semantics.
 
 `package/Commands/Decode.roc` contains shared internal reply shapes, not another

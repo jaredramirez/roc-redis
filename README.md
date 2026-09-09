@@ -38,18 +38,16 @@ import redis.Execute
 # Validate constant settings once, at module scope.
 Ok(config) = Config.default |> Config.build
 
-# Inside your effectful function, with an exclusively owned transport:
-stored = Execute.request!(config, Commands.Strings.get("example:greeting"), transport)?
+# Inside your effectful function, with the connection configured below:
+stored = connection.request!(Commands.Strings.get("example:greeting"))?
 greeting = match stored {
     Present(bytes) => bytes.to_utf8()?
     Absent => "Hello"
 }
 updated = Bytes.from_str("${greeting}!")
 
-_ = Execute.request!(
-    config,
+_ = connection.request!(
     Commands.Strings.set("example:greeting", updated, { expiration: Seconds(60) }),
-    transport,
 )?
 ```
 
@@ -66,11 +64,12 @@ for coordinated updates. Run this example only against disposable data.
 
 ## Bring your own transport
 
-Supply two effects to `Execute`:
+Bind validated config and two byte-stream effects once:
 
 ```roc
-transport : Execute.Transport(_, _)
-transport = {
+connection : Execute.Connection(_, _)
+connection = {
+    config: config,
     read!: |max_bytes| stream.read_up_to!(max_bytes, 2_000)
         .map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
     write_all!: |bytes| stream.write!(bytes, 2_000),
@@ -81,9 +80,11 @@ Your application owns the connection, TLS, deadlines, and exclusive access.
 `read!` returns at most the requested bytes; `write_all!` must accept the whole
 buffer. Discard the connection after `ExchangeFailed`; execution may be ambiguous.
 
-`Execute.request!` handles one request. `Execute.batch!` pipelines requests in
+`connection.request!` handles one request. `connection.batch!` pipelines requests in
 one exchange, with `Batch.each` preserving each result. Batching is not a transaction.
 Reply suppression has a separate, explicitly unsafe `Execute.no_reply!` API.
+The wrapper does not enforce ownership or invalidate aliases after failure.
+Unbound `Execute.request!` and `Execute.batch!` remain available for adapters.
 
 No RESP3, automatic retries, cluster routing, or connection pool is included.
 [Full API, transport contract, and failure guarantees →](docs/usage.md)
