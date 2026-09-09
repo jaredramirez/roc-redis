@@ -7,7 +7,7 @@ This is a publishing checklist, not evidence that a release exists.
 - [x] Confirm Apache 2.0; include and verify repository/package license and notice in bundles.
 - [x] Finish third-party provenance/attribution notes (`THIRD_PARTY.md`).
 - [x] Record four independent Sol API reviews and focused community questions.
-- [ ] Confirm repository destination and publication authority.
+- [x] Confirm repository destination and publication authority.
 - [ ] Publish source and run configured remote Linux/macOS CI on the exact revision.
 - [ ] Publish an immutable preview bundle only after its checks pass.
 - [ ] Put its real content-addressed URL in a complete installation example.
@@ -35,10 +35,9 @@ release should link the exact source revision and identify the pinned compiler.
 6. Only then mark installation/remote-CI items complete and post the community
    message drafted in [COMMUNITY-FEEDBACK.md](COMMUNITY-FEEDBACK.md).
 
-At preparation time this checkout had no Git remote. GitHub authentication was
-available, but `jaredramirez/roc-redis` did not exist. Creating a public repository
-awaits the maintainer's answer. Apache 2.0 was subsequently approved and applied;
-the repository destination is not inferred from the local directory name.
+The repository is public at `https://github.com/jaredramirez/roc-redis`.
+The maintainer approved preparing and publishing `0.1.0-rc1` on September 9.
+The remaining checklist items must be backed by completed publication checks.
 
 ## Local preparation checks (September 8)
 

@@ -13,70 +13,69 @@ by default; speed and size remain experimental. The API is open to feedback.
 
 ## Get started
 
-See [installation and a complete local consumer](docs/INSTALL.md).
-From this checkout:
+The example below targets **0.1.0-rc1** and the pinned Roc nightly above.
+Save it as `main.roc`. With Roc and Redis available (the checkout's
+`nix develop` supplies both), start disposable Redis in a separate terminal:
 
-```console
-nix develop
-just test
-just integration
+```sh
+redis-server --bind 127.0.0.1 --port 6379 --save "" --appendonly no
 ```
 
-Integration tests start isolated, disposable Redis instances. Test orchestration
-is written in Roc. [More development commands →](docs/development.md)
-
-## Read, modify, write
-
-Read a UTF-8 greeting, append an exclamation mark, and save it for 60 seconds:
+Then run `roc --opt=dev main.roc`. Each run appends `!` to a UTF-8 greeting
+and saves it for 60 seconds:
 
 ```roc
+app [main!] {
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.23.0-rc1/3hT3SoHZ6qbEsa9qVFLUW3547U5LeoNd1KbpqLpz4r1i.tar.zst",
+	redis: "https://github.com/jaredramirez/roc-redis/releases/download/0.1.0-rc1/D8HziVQtZBUBer5ASdLDqwsFwXwZ2pV5XNQ9C21urvTZ.tar.zst",
+}
+
+import pf.Tcp
+import pf.Stdout
+import pf.OsStr exposing [OsStr]
 import redis.Bytes
 import redis.Commands
 import redis.Config
-import redis.Execute
+import redis.Connection
 
-# Validate constant settings once, at module scope.
 Ok(config) = Config.default |> Config.build
 
-# Inside your effectful function, with the connection configured below:
-stored = connection.request!(Commands.Strings.get("example:greeting"))?
-greeting = match stored {
-    Present(bytes) => bytes.to_utf8()?
-    Absent => "Hello"
+main! : List(OsStr) => Try({}, [ExampleFailed(Str), Exit(I32), ..])
+main! = |_args| {
+	stream = Tcp.connect!("127.0.0.1", 6379, 2_000)
+		? |error| ExampleFailed("connect: ${Str.inspect(error)}")
+	connection : Connection(_, _)
+	connection = {
+		config: config,
+		read!: |max_bytes| stream.read_up_to!(max_bytes, 2_000)
+			.map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
+		write_all!: |bytes| stream.write!(bytes, 2_000),
+	}
+	stored = connection.request!(Commands.Strings.get("example:greeting"))
+		? |error| ExampleFailed("GET: ${Str.inspect(error)}")
+	greeting = match stored {
+		Present(bytes) => bytes.to_utf8() ? |_| ExampleFailed("greeting is not UTF-8")
+		Absent => "Hello"
+	}
+	updated = Bytes.from_str("${greeting}!")
+	_ = connection.request!(
+		Commands.Strings.set("example:greeting", updated, { expiration: Seconds(60) }),
+	) ? |error| ExampleFailed("SET: ${Str.inspect(error)}")
+	Stdout.line!("${greeting}!") ? |error| ExampleFailed("stdout: ${Str.inspect(error)}")
+	Ok({})
 }
-updated = Bytes.from_str("${greeting}!")
-
-_ = connection.request!(
-    Commands.Strings.set("example:greeting", updated, { expiration: Seconds(60) }),
-)?
 ```
 
-Missing keys start with `"Hello"`; invalid UTF-8 and request failures propagate
-through `?`. The SET resets the key's TTL to 60 seconds.
-
+Missing keys start with `"Hello"`; invalid UTF-8 and request failures are reported.
 **This is not atomic:** another writer can change the value between GET and SET.
-Use a server-side command such as APPEND for atomic appends, or a transaction/script
-for coordinated updates. Run this example only against disposable data.
+Use APPEND or a transaction/script for coordinated updates. Run this example
+only against disposable data; stop Redis with Ctrl-C when finished.
 
-[Complete runnable example](examples/read_modify_write.roc) ·
-[Connection setup](examples/README.md) ·
+[Installation details](docs/INSTALL.md) ·
+[Checkout-local example](examples/read_modify_write.roc) ·
 [Custom decoders and batches](examples/composition.roc)
 
 ## Bring your own transport
-
-Bind validated config and two byte-stream effects once:
-
-```roc
-import redis.Connection
-
-connection : Connection(_, _)
-connection = {
-    config: config,
-    read!: |max_bytes| stream.read_up_to!(max_bytes, 2_000)
-        .map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
-    write_all!: |bytes| stream.write!(bytes, 2_000),
-}
-```
 
 Your application owns the connection, TLS, deadlines, and exclusive access.
 `read!` returns at most the requested bytes; `write_all!` must accept the whole
@@ -88,7 +87,9 @@ Reply suppression has a separate, explicitly unsafe `Execute.no_reply!` API.
 The wrapper does not enforce ownership or invalidate aliases after failure.
 Unbound `Execute.request!` and `Execute.batch!` remain available for adapters.
 
-No RESP3, automatic retries, cluster routing, or connection pool is included.
+The core includes no RESP3, automatic retries, cluster routing, or connection pool.
+The [minimal Zig pooling example](examples/pooling/README.md) demonstrates
+platform-owned pooling; it is not a production concurrent pool.
 [Full API, transport contract, and failure guarantees →](docs/usage.md)
 
 ## Benchmarks

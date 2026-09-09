@@ -2,6 +2,10 @@
 //! Host calls are serialized; this demo is not a concurrent application server.
 const std = @import("std");
 pub const c = @cImport({
+    // glibc's fortified variadic open/openat wrappers cannot be translated by
+    // this Zig release in optimized builds. We use neither function; disable
+    // those C-only wrappers for this import, retaining Zig ReleaseSafe checks.
+    @cUndef("_FORTIFY_SOURCE");
     @cInclude("sys/socket.h");
     @cInclude("netinet/in.h");
     @cInclude("arpa/inet.h");
