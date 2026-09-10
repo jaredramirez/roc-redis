@@ -1599,6 +1599,9 @@ test_records = [
 	test_record("set_get_sequential", 20, 20),
 	test_record("incr_sequential", 10, 10),
 	test_record("ping_pipeline", 10, 3),
+	test_record("mset_mget_sequential", 20, 20),
+	test_record("hash_roundtrip_sequential", 20, 20),
+	test_record("set_get_pipeline", 20, 3),
 ]
 
 test_subjects : List(Subject)
