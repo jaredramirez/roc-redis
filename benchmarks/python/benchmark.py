@@ -8,13 +8,16 @@ import os
 import re
 import sys
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import redis
 from redis.backoff import NoBackoff
 from redis.retry import Retry
+
+if TYPE_CHECKING:
+    from redis.typing import EncodableT, FieldT
 
 SCHEMA: Final = "roc-redis-benchmark/v2"
 IMPLEMENTATION: Final = "python"
@@ -244,7 +247,9 @@ def ping_pipeline(client: redis.Redis, count: int, batch_size: int) -> None:
         completed += current_batch
 
 
-def mset_mget_sequential(client: redis.Redis, keys: tuple[bytes, ...], count: int) -> None:
+def mset_mget_sequential(
+    client: redis.Redis, keys: tuple[bytes, ...], count: int
+) -> None:
     mapping = {key: BINARY_PAYLOAD for key in keys}
     for index in range(count):
         require(
@@ -265,11 +270,13 @@ def mset_mget_sequential(client: redis.Redis, keys: tuple[bytes, ...], count: in
 
 def hash_roundtrip_sequential(client: redis.Redis, key: bytes, count: int) -> None:
     fields = (b"field:0", b"field:1", b"field:2")
-    mapping = {field: BINARY_PAYLOAD for field in fields}
+    # hset's mapping wants the redis field/value union as its (invariant) key
+    # type, so annotate rather than let the comprehension infer dict[bytes, bytes].
+    mapping: Mapping[FieldT, EncodableT] = {field: BINARY_PAYLOAD for field in fields}
     for index in range(count):
         # HSET returns 0..3 depending on how many fields were newly added, so
         # accept any non-negative reply rather than a specific count.
-        added = client.hset(key, mapping=mapping)  # type: ignore[no-untyped-call]
+        added = client.hset(key, mapping=mapping)
         require(
             isinstance(added, int) and added >= 0,
             f"HSET {index + 1} returned {added!r}, expected a non-negative reply",

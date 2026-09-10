@@ -165,30 +165,34 @@ in
         export HOME="$TMPDIR/home"
         mkdir -p "$HOME"
         timeout 300 roc-redis-benchmark --iterations 10 --warmup 0 --samples 1 --pipeline-batch 4 --all-order-rotations --jsonl benchmark.jsonl >benchmark-output
-        test "$(grep -Ec '^(roc-redis|redis-py|go-redis|redis-rs|hiredis) \|' benchmark-output)" -eq 20
+        # Record math: 5 subjects x 7 workloads x 10 order rotations x 1 sample.
+        # Summary lines and per-rotation records = 5 x 7 = 35; total records and
+        # per-metadata-field = 5 x 7 x 10 = 350; per-client and per-position =
+        # 7 x 10 = 70. Update these if the controller's workload list changes.
+        test "$(grep -Ec '^(roc-redis|redis-py|go-redis|redis-rs|hiredis) \|' benchmark-output)" -eq 35
         grep -F 'roc-redis | utc_wall_clock | ping_sequential |' benchmark-output
         grep -F 'redis-py | monotonic | ping_sequential |' benchmark-output
         grep -F 'go-redis | monotonic | ping_sequential |' benchmark-output
         grep -F 'redis-rs | monotonic | ping_sequential |' benchmark-output
         grep -F 'hiredis | monotonic | ping_sequential |' benchmark-output
-        test "$(wc -l <benchmark.jsonl)" -eq 200
-        test "$(grep -Fc '"schema":"roc-redis-benchmark/v2"' benchmark.jsonl)" -eq 200
-        test "$(grep -Ec '"redis_version":"[A-Za-z0-9+._-]+"' benchmark.jsonl)" -eq 200
-        test "$(grep -Fc '"nix_source_id":"${benchmarkNixSourceId}"' benchmark.jsonl)" -eq 200
-        test "$(grep -Fc '"build_mode":"${benchmarkBuildMode}"' benchmark.jsonl)" -eq 200
-        test "$(grep -Fc '"nix_system":"${system}"' benchmark.jsonl)" -eq 200
-        test "$(grep -Fc '"os":"${benchmarkOs}"' benchmark.jsonl)" -eq 200
-        test "$(grep -Fc '"arch":"${benchmarkArch}"' benchmark.jsonl)" -eq 200
-        test "$(grep -Fc '"client_version":"${rocRedisClientVersion}"' benchmark.jsonl)" -eq 40
-        test "$(grep -Fc '"client_version":"${redisPyVersion}"' benchmark.jsonl)" -eq 40
-        test "$(grep -Fc '"client_version":"${goRedisVersion}"' benchmark.jsonl)" -eq 40
-        test "$(grep -Fc '"client_version":"${redisRsVersion}"' benchmark.jsonl)" -eq 40
-        test "$(grep -Fc '"client_version":"${pkgs.hiredis.version}"' benchmark.jsonl)" -eq 40
+        test "$(wc -l <benchmark.jsonl)" -eq 350
+        test "$(grep -Fc '"schema":"roc-redis-benchmark/v2"' benchmark.jsonl)" -eq 350
+        test "$(grep -Ec '"redis_version":"[A-Za-z0-9+._-]+"' benchmark.jsonl)" -eq 350
+        test "$(grep -Fc '"nix_source_id":"${benchmarkNixSourceId}"' benchmark.jsonl)" -eq 350
+        test "$(grep -Fc '"build_mode":"${benchmarkBuildMode}"' benchmark.jsonl)" -eq 350
+        test "$(grep -Fc '"nix_system":"${system}"' benchmark.jsonl)" -eq 350
+        test "$(grep -Fc '"os":"${benchmarkOs}"' benchmark.jsonl)" -eq 350
+        test "$(grep -Fc '"arch":"${benchmarkArch}"' benchmark.jsonl)" -eq 350
+        test "$(grep -Fc '"client_version":"${rocRedisClientVersion}"' benchmark.jsonl)" -eq 70
+        test "$(grep -Fc '"client_version":"${redisPyVersion}"' benchmark.jsonl)" -eq 70
+        test "$(grep -Fc '"client_version":"${goRedisVersion}"' benchmark.jsonl)" -eq 70
+        test "$(grep -Fc '"client_version":"${redisRsVersion}"' benchmark.jsonl)" -eq 70
+        test "$(grep -Fc '"client_version":"${pkgs.hiredis.version}"' benchmark.jsonl)" -eq 70
         for rotation in 0 1 2 3 4 5 6 7 8 9; do
-          test "$(grep -Fc "\"order_rotation\":$rotation" benchmark.jsonl)" -eq 20
+          test "$(grep -Fc "\"order_rotation\":$rotation" benchmark.jsonl)" -eq 35
         done
         for position in 1 2 3 4 5; do
-          test "$(grep -Fc "\"subject_position\":$position" benchmark.jsonl)" -eq 40
+          test "$(grep -Fc "\"subject_position\":$position" benchmark.jsonl)" -eq 70
         done
         touch "$out"
       '';
