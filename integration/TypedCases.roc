@@ -71,7 +71,7 @@ TypedCases :: [].{
 		_ = Execute.request!(config, Commands.Streams.xread_group("group", "consumer", NonEmpty.new({ key, id: Bytes.from_str(">") }, []), { no_ack: False }), transport).map_err(Str.inspect)?
 		assert_reply!(Commands.Streams.xack(key, "group", NonEmpty.new(Bytes.from_str("1-0"), [])), 1, config, transport)?
 		assert_reply!(Commands.Scripting.eval("return {ARGV[1], false}", [], ["binary"], Reply.array), [Resp.bulk_utf8("binary"), Resp.NullBulkString], config, transport)?
-		_ = Execute.request!(config, Commands.Server.time({}), transport).map_err(Str.inspect)?
+		_ = Execute.request!(config, Commands.Server.time(), transport).map_err(Str.inspect)?
 		_ = Execute.request!(config, Commands.Server.config_get(NonEmpty.new(Bytes.from_str("port"), [])), transport).map_err(Str.inspect)?
 		assert_reply!(Commands.PubSub.pubsub_num_sub(["roc-redis-unsubscribed"]), [{ channel: Bytes.from_str("roc-redis-unsubscribed"), count: 0 }], config, transport)?
 		Ok({})
@@ -94,7 +94,7 @@ replace! = |key, initializer, config, transport| {
 		initializer,
 		Commands.Keyspace.pexpire(key, 60_000, Always).map(|_| {}),
 	]
-	_ = Execute.request!(config, Commands.Transactions.multi({}), transport).map_err(Str.inspect)?
+	_ = Execute.request!(config, Commands.Transactions.multi(), transport).map_err(Str.inspect)?
 	_ = Execute.batch!(config, Batch.all(requests.map(Commands.Transactions.queued)), transport).map_err(Str.inspect)?
 	result = Execute.request!(config, Commands.Transactions.exec_batch(Batch.all(requests)), transport).map_err(Str.inspect)?
 	match result {

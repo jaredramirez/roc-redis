@@ -33,14 +33,14 @@ Scripting :: [].{
 	function_delete : Bytes.Bytes -> Request.Request({}, Reply.Error)
 	function_delete = |name| Request.new(Command.new("FUNCTION", ["DELETE", name]), Reply.okay)
 
-	function_dump : {} -> Request.Request(Bytes.Bytes, Reply.Error)
-	function_dump = |_| Request.new(Command.new("FUNCTION", ["DUMP"]), Decode.bytes)
+	function_dump : () -> Request.Request(Bytes.Bytes, Reply.Error)
+	function_dump = || Request.new(Command.new("FUNCTION", ["DUMP"]), Decode.bytes)
 
 	function_flush : FlushMode -> Request.Request({}, Reply.Error)
 	function_flush = |mode| Request.new(Command.new("FUNCTION", [Bytes.from_str("FLUSH")].concat(flush_args(mode))), Reply.okay)
 
-	function_kill : {} -> Request.Request({}, Reply.Error)
-	function_kill = |_| Request.new(Command.new("FUNCTION", ["KILL"]), Reply.okay)
+	function_kill : () -> Request.Request({}, Reply.Error)
+	function_kill = || Request.new(Command.new("FUNCTION", ["KILL"]), Reply.okay)
 
 	## Introspection structures can change with Redis versions; callers choose
 	## the semantic structure they need rather than losing unknown fields.
@@ -114,8 +114,8 @@ Scripting :: [].{
 	script_flush : FlushMode -> Request.Request({}, Reply.Error)
 	script_flush = |mode| Request.new(Command.new("SCRIPT", [Bytes.from_str("FLUSH")].concat(flush_args(mode))), Reply.okay)
 
-	script_kill : {} -> Request.Request({}, Reply.Error)
-	script_kill = |_| Request.new(Command.new("SCRIPT", ["KILL"]), Reply.okay)
+	script_kill : () -> Request.Request({}, Reply.Error)
+	script_kill = || Request.new(Command.new("SCRIPT", ["KILL"]), Reply.okay)
 
 	script_load : Bytes.Bytes -> Request.Request(Bytes.Bytes, Reply.Error)
 	script_load = |code| Request.new(Command.new("SCRIPT", ["LOAD", code]), Decode.bytes)

@@ -75,7 +75,7 @@ expect {
 
 expect {
 	request = Request.new(
-		Command.ping({}),
+		Command.ping(),
 		|response| match response {
 			Resp.Integer(value) => Ok(value)
 			_ => Err(CustomDecoderError)
@@ -90,7 +90,7 @@ expect {
 }
 
 expect {
-	match Decoder.feed(Decoder.init({}), Str.to_utf8("*2\r\n+OK\r\n:1\r\n")) {
+	match Decoder.feed(Decoder.init(), Str.to_utf8("*2\r\n+OK\r\n:1\r\n")) {
 		Progress({ decoder, values: [response] }) =>
 			Decoder.finish(decoder) == Ok({}) and response == Resp.Array([Resp.simple_utf8("OK"), Resp.Integer(1)])
 		_ => False
@@ -104,7 +104,7 @@ expect {
 	commands = [
 		RawArrays.arcount(key),
 		RawBitmaps.getbit(key, Str.to_utf8("0")),
-		RawCluster.cluster_info({}),
+		RawCluster.cluster_info(),
 		RawSession.select(Str.to_utf8("0")),
 		RawGeo.geopos(key, []),
 		RawHashes.hgetall(key),
@@ -113,12 +113,12 @@ expect {
 		RawLists.lindex(key, Str.to_utf8("0")),
 		RawPubSub.publish(Str.to_utf8("channel"), Str.to_utf8("message")),
 		RawScripting.eval(Str.to_utf8("return 1"), [], []),
-		RawServer.dbsize({}),
+		RawServer.dbsize(),
 		RawSets.scard(key),
 		RawSortedSets.zcard(key),
 		RawStreams.xdel(key, Str.to_utf8("0-1"), []),
 		RawStrings.get(key),
-		RawTransactions.multi({}),
+		RawTransactions.multi(),
 		RawVectorSets.vcard(key),
 	]
 
@@ -134,7 +134,7 @@ expect {
 	commands = [
 		Commands.Arrays.arcount(key).command(),
 		Commands.Bitmaps.get_bit(key, 0).command(),
-		Commands.Cluster.info({}).command(),
+		Commands.Cluster.info().command(),
 		Commands.Session.select(0).command(),
 		Commands.Geo.geo_pos(key, []).command(),
 		Commands.Hashes.hget_all(key).command(),
@@ -143,12 +143,12 @@ expect {
 		Commands.Lists.lindex(key, 0).command(),
 		Commands.PubSub.publish("channel", "message").command(),
 		Commands.Scripting.eval("return 1", [], [], Reply.integer).command(),
-		Commands.Server.dbsize({}).command(),
+		Commands.Server.dbsize().command(),
 		Commands.Sets.scard(key).command(),
 		Commands.SortedSets.zcard(key).command(),
 		Commands.Streams.xdel(key, NonEmpty.new(Bytes.from_str("0-1"), [])).command(),
 		Commands.Strings.get(key).command(),
-		Commands.Transactions.multi({}).command(),
+		Commands.Transactions.multi().command(),
 		Commands.VectorSets.vcard(key).command(),
 	]
 	commands.len() == 18 and commands.join_map(Command.encode).len() > 0

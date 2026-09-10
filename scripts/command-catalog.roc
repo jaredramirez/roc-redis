@@ -2843,8 +2843,8 @@ render_function_with_reserved = |entry, reserved_names| {
 	command_name = Str.from_utf8(wire.command_name) ? |_| CatalogFailed("non-UTF-8 command name for ${entry.command}")
 	fixed_expression = if wire.fixed_arguments.is_empty() "[]" else "[${Str.join_with(wire.fixed_arguments.map(bytes_expression), ", ")}]"
 	full_arguments = concat_expressions([fixed_expression, arguments_expression].keep_if(|expression| expression != "[]"))
-	signature = if parameters.is_empty() "{}" else Str.join_with(parameters.map(|parameter| parameter.roc_type), ", ")
-	closure = if parameters.is_empty() "|_|" else "|${Str.join_with(parameters.map(|parameter| parameter.name), ", ")}|"
+	signature = if parameters.is_empty() "()" else Str.join_with(parameters.map(|parameter| parameter.roc_type), ", ")
+	closure = if parameters.is_empty() "||" else "|${Str.join_with(parameters.map(|parameter| parameter.name), ", ")}|"
 	lines = function_doc_lines(entry, parameters)
 		.concat([
 			"\t${entry.constructor} : ${signature} -> Command.Command",
@@ -2855,8 +2855,8 @@ render_function_with_reserved = |entry, reserved_names| {
 			"\t\tCommand.from_nonempty_bytes(${Str.inspect(command_name)}, ${full_arguments})",
 			"\t}",
 		])
-	invocation = if parameters.is_empty() "{}" else Str.join_with(parameters.map(|parameter| parameter.sample), ", ")
-	minimal_invocation = if parameters.is_empty() "{}" else Str.join_with(parameters.map(|parameter| parameter.minimal_sample), ", ")
+	invocation = if parameters.is_empty() "" else Str.join_with(parameters.map(|parameter| parameter.sample), ", ")
+	minimal_invocation = if parameters.is_empty() "" else Str.join_with(parameters.map(|parameter| parameter.minimal_sample), ", ")
 	expected_parts = [wire.command_name].concat(wire.fixed_arguments).concat(samples)
 	minimal_expected_parts = [wire.command_name].concat(wire.fixed_arguments).concat(minimal_samples)
 	validate_sample_arity(entry, expected_parts.len())?

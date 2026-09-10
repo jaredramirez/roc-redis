@@ -439,7 +439,7 @@ run_ping! = |remaining, transport|
 	if remaining == 0 {
 		Ok({})
 	} else {
-		result = raw_request!(Command.ping({}), transport)
+		result = raw_request!(Command.ping(), transport)
 			? |error| BenchmarkFailed("PING: ${Str.inspect(error)}")
 		{} = require_response("PING", result, Resp.simple_utf8("PONG"))?
 		run_ping!(remaining - 1, transport)
@@ -487,7 +487,7 @@ run_ping_pipeline! = |remaining, batch_size, transport|
 		Ok({})
 	} else {
 		current_batch = if remaining < batch_size remaining else batch_size
-		commands = List.repeat(Command.ping({}), current_batch)
+		commands = List.repeat(Command.ping(), current_batch)
 		result = Execute.batch!(execution_config, Batch.all(commands.map(|command| Request.new(command, Reply.raw))), transport)
 			? |error| BenchmarkFailed("PING pipeline: ${Str.inspect(error)}")
 		if result.len() == current_batch and result.all(|response| response == Resp.simple_utf8("PONG")) {

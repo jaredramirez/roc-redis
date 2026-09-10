@@ -54,7 +54,7 @@ main! = |args| {
 		var $iteration = 0.U64
 		while $iteration < 10 {
 			if workload == "ping_pipeline" {
-				plan = Batch.all(List.repeat(Request.new(Command.ping({}), Reply.raw), 100))
+				plan = Batch.all(List.repeat(Request.new(Command.ping(), Reply.raw), 100))
 				values = Execute.batch!(config, plan, transport) ? |error| TraceFailed(Str.inspect(error))
 				if values != List.repeat(Resp.simple_utf8("PONG"), 100) {
 					return Err(TraceFailed("invalid pipeline"))
@@ -69,7 +69,7 @@ main! = |args| {
 				command = if workload == "incr_sequential" {
 					Command.new("INCR", [key])
 				} else {
-					Command.ping({})
+					Command.ping()
 				}
 				value = Execute.request!(config, Request.new(command, Reply.raw), transport) ? |error| TraceFailed(Str.inspect(error))
 				expected = if workload == "incr_sequential" {

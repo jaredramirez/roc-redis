@@ -124,7 +124,7 @@ decode_each = |requests, responses| {
 
 expect {
 	request = Request.new(
-		Command.ping({}),
+		Command.ping(),
 		|response| match response {
 			Resp.Integer(value) => Ok(value)
 			_ => Err(NotInteger)
@@ -135,14 +135,14 @@ expect {
 }
 
 expect {
-	request = Request.new(Command.ping({}), |_response| Ok(1))
+	request = Request.new(Command.ping(), |_response| Ok(1))
 	Batch.each([request]).decode([]).is_err()
 }
 
 expect {
 	left = Batch.one(
 		Request.new(
-			Command.ping({}),
+			Command.ping(),
 			|response| match response {
 				Resp.Integer(number) => Ok(number)
 				_ => Err(NotInteger)
@@ -151,7 +151,7 @@ expect {
 	)
 	right = Batch.one(
 		Request.new(
-			Command.ping({}),
+			Command.ping(),
 			|response| match response {
 				Resp.BulkString(bytes) => Ok(bytes)
 				_ => Err(NotBulk)

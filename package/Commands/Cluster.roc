@@ -124,26 +124,26 @@ Cluster :: [].{
 		Request.new(Command.new("CLUSTER", ["SLOT-STATS"].concat(args)), decode)
 	}
 
-	bump_epoch : {} -> Request.Request(Bytes.Bytes, Reply.Error)
-	bump_epoch = |_| Request.new(Command.new("CLUSTER", ["BUMPEPOCH"].concat([])), simple_bytes)
+	bump_epoch : () -> Request.Request(Bytes.Bytes, Reply.Error)
+	bump_epoch = || Request.new(Command.new("CLUSTER", ["BUMPEPOCH"].concat([])), simple_bytes)
 
-	flush_slots : {} -> Request.Request({}, Reply.Error)
-	flush_slots = |_| Request.new(Command.new("CLUSTER", ["FLUSHSLOTS"].concat([])), Reply.okay)
+	flush_slots : () -> Request.Request({}, Reply.Error)
+	flush_slots = || Request.new(Command.new("CLUSTER", ["FLUSHSLOTS"].concat([])), Reply.okay)
 
-	save_config : {} -> Request.Request({}, Reply.Error)
-	save_config = |_| Request.new(Command.new("CLUSTER", ["SAVECONFIG"].concat([])), Reply.okay)
+	save_config : () -> Request.Request({}, Reply.Error)
+	save_config = || Request.new(Command.new("CLUSTER", ["SAVECONFIG"].concat([])), Reply.okay)
 
-	info : {} -> Request.Request(Bytes.Bytes, Reply.Error)
-	info = |_| Request.new(Command.new("CLUSTER", ["INFO"].concat([])), Decode.bytes)
+	info : () -> Request.Request(Bytes.Bytes, Reply.Error)
+	info = || Request.new(Command.new("CLUSTER", ["INFO"].concat([])), Decode.bytes)
 
-	my_id : {} -> Request.Request(Bytes.Bytes, Reply.Error)
-	my_id = |_| Request.new(Command.new("CLUSTER", ["MYID"].concat([])), Decode.bytes)
+	my_id : () -> Request.Request(Bytes.Bytes, Reply.Error)
+	my_id = || Request.new(Command.new("CLUSTER", ["MYID"].concat([])), Decode.bytes)
 
-	my_shard_id : {} -> Request.Request(Bytes.Bytes, Reply.Error)
-	my_shard_id = |_| Request.new(Command.new("CLUSTER", ["MYSHARDID"].concat([])), Decode.bytes)
+	my_shard_id : () -> Request.Request(Bytes.Bytes, Reply.Error)
+	my_shard_id = || Request.new(Command.new("CLUSTER", ["MYSHARDID"].concat([])), Decode.bytes)
 
-	nodes : {} -> Request.Request(Bytes.Bytes, Reply.Error)
-	nodes = |_| Request.new(Command.new("CLUSTER", ["NODES"].concat([])), Decode.bytes)
+	nodes : () -> Request.Request(Bytes.Bytes, Reply.Error)
+	nodes = || Request.new(Command.new("CLUSTER", ["NODES"].concat([])), Decode.bytes)
 
 	forget : Bytes.Bytes -> Request.Request({}, Reply.Error)
 	forget = |node| Request.new(Command.new("CLUSTER", ["FORGET"].concat([node])), Reply.okay)
@@ -207,18 +207,18 @@ Cluster :: [].{
 
 	## Changes state on this connection. Keep exclusive ownership until the
 	## dependent request has completed; this library does not route it for you.
-	asking : {} -> Request.Request({}, Reply.Error)
-	asking = |_| Request.new(Command.new("ASKING", []), Reply.okay)
+	asking : () -> Request.Request({}, Reply.Error)
+	asking = || Request.new(Command.new("ASKING", []), Reply.okay)
 
 	## Changes state on this connection. Keep exclusive ownership until the
 	## dependent request has completed; this library does not route it for you.
-	read_only : {} -> Request.Request({}, Reply.Error)
-	read_only = |_| Request.new(Command.new("READONLY", []), Reply.okay)
+	read_only : () -> Request.Request({}, Reply.Error)
+	read_only = || Request.new(Command.new("READONLY", []), Reply.okay)
 
 	## Changes state on this connection. Keep exclusive ownership until the
 	## dependent request has completed; this library does not route it for you.
-	read_write : {} -> Request.Request({}, Reply.Error)
-	read_write = |_| Request.new(Command.new("READWRITE", []), Reply.okay)
+	read_write : () -> Request.Request({}, Reply.Error)
+	read_write = || Request.new(Command.new("READWRITE", []), Reply.okay)
 }
 
 decimal : U64 -> Bytes.Bytes
@@ -231,9 +231,9 @@ expect Cluster.add_slots(NonEmpty.new(0, [16383])).command() == Command.new("CLU
 expect Cluster.add_slots_range(NonEmpty.new({ start: 1, end: 9 }, [{ start: 11, end: 12 }])).command() == Command.new("CLUSTER", ["ADDSLOTSRANGE", "1", "9", "11", "12"])
 expect Cluster.set_slot(1, Importing("node")).command() == Command.new("CLUSTER", ["SETSLOT", "1", "IMPORTING", "node"])
 expect Cluster.meet("127.0.0.1", 6379, Present(16379)).command() == Command.new("CLUSTER", ["MEET", "127.0.0.1", "6379", "16379"])
-expect Cluster.bump_epoch({}).decode(Resp.simple_utf8("BUMPED 1")) == Ok(Bytes.from_str("BUMPED 1"))
+expect Cluster.bump_epoch().decode(Resp.simple_utf8("BUMPED 1")) == Ok(Bytes.from_str("BUMPED 1"))
 expect Cluster.get_keys_in_slot(1, 10).decode(Resp.Array([Resp.bulk_utf8("key")])) == Ok([Bytes.from_str("key")])
 expect Cluster.migration(Cancel(All), Reply.okay).command() == Command.new("CLUSTER", ["MIGRATION", "CANCEL", "ALL"])
 expect Cluster.migration(Import(NonEmpty.new({ start: 1, end: 2 }, [{ start: 4, end: 5 }])), Reply.bulk).command() == Command.new("CLUSTER", ["MIGRATION", "IMPORT", "1", "2", "4", "5"])
 expect Cluster.slot_stats(OrderBy({ metric: "key-count", limit: Present(10), order: Descending }), Reply.array).command() == Command.new("CLUSTER", ["SLOT-STATS", "ORDERBY", "key-count", "LIMIT", "10", "DESC"])
-expect Cluster.asking({}).decode(Resp.simple_utf8("OK")) == Ok({})
+expect Cluster.asking().decode(Resp.simple_utf8("OK")) == Ok({})

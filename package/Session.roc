@@ -36,32 +36,32 @@ Session := {}.{
 	## Construct `CLIENT GETNAME`.
 	## Available since Redis 2.6.9.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/client-getname/).
-	client_getname : {} -> Command.Command
-	client_getname = |_| {
+	client_getname : () -> Command.Command
+	client_getname = || {
 		Command.from_nonempty_bytes("CLIENT", [['G', 'E', 'T', 'N', 'A', 'M', 'E']])
 	}
 
 	## Construct `CLIENT GETREDIR`.
 	## Available since Redis 6.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/client-getredir/).
-	client_getredir : {} -> Command.Command
-	client_getredir = |_| {
+	client_getredir : () -> Command.Command
+	client_getredir = || {
 		Command.from_nonempty_bytes("CLIENT", [['G', 'E', 'T', 'R', 'E', 'D', 'I', 'R']])
 	}
 
 	## Construct `CLIENT ID`.
 	## Available since Redis 5.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/client-id/).
-	client_id : {} -> Command.Command
-	client_id = |_| {
+	client_id : () -> Command.Command
+	client_id = || {
 		Command.from_nonempty_bytes("CLIENT", [['I', 'D']])
 	}
 
 	## Construct `CLIENT INFO`.
 	## Available since Redis 6.2.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/client-info/).
-	client_info : {} -> Command.Command
-	client_info = |_| {
+	client_info : () -> Command.Command
+	client_info = || {
 		Command.from_nonempty_bytes("CLIENT", [['I', 'N', 'F', 'O']])
 	}
 
@@ -152,8 +152,8 @@ Session := {}.{
 	## Construct `CLIENT TRACKINGINFO`.
 	## Available since Redis 6.2.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/client-trackinginfo/).
-	client_trackinginfo : {} -> Command.Command
-	client_trackinginfo = |_| {
+	client_trackinginfo : () -> Command.Command
+	client_trackinginfo = || {
 		Command.from_nonempty_bytes("CLIENT", [['T', 'R', 'A', 'C', 'K', 'I', 'N', 'G', 'I', 'N', 'F', 'O']])
 	}
 
@@ -170,8 +170,8 @@ Session := {}.{
 	## Construct `CLIENT UNPAUSE`.
 	## Available since Redis 6.2.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/client-unpause/).
-	client_unpause : {} -> Command.Command
-	client_unpause = |_| {
+	client_unpause : () -> Command.Command
+	client_unpause = || {
 		Command.from_nonempty_bytes("CLIENT", [['U', 'N', 'P', 'A', 'U', 'S', 'E']])
 	}
 
@@ -208,16 +208,16 @@ Session := {}.{
 	## Available since Redis 1.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/quit/).
 	## Deprecated by Redis; retained for catalog completeness.
-	quit : {} -> Command.Command
-	quit = |_| {
+	quit : () -> Command.Command
+	quit = || {
 		Command.from_nonempty_bytes("QUIT", [])
 	}
 
 	## Construct `RESET`.
 	## Available since Redis 6.2.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/reset/).
-	reset : {} -> Command.Command
-	reset = |_| {
+	reset : () -> Command.Command
+	reset = || {
 		Command.from_nonempty_bytes("RESET", [])
 	}
 
@@ -237,13 +237,13 @@ expect Command.encode(Session.auth([], [0, 3, 255])) == ['*', '2', '\r', '\n', '
 
 expect Command.encode(Session.client_caching(['Y', 'E', 'S'])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'C', 'A', 'C', 'H', 'I', 'N', 'G', '\r', '\n', '$', '3', '\r', '\n', 'Y', 'E', 'S', '\r', '\n']
 
-expect Command.encode(Session.client_getname({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'G', 'E', 'T', 'N', 'A', 'M', 'E', '\r', '\n']
+expect Command.encode(Session.client_getname()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'G', 'E', 'T', 'N', 'A', 'M', 'E', '\r', '\n']
 
-expect Command.encode(Session.client_getredir({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '8', '\r', '\n', 'G', 'E', 'T', 'R', 'E', 'D', 'I', 'R', '\r', '\n']
+expect Command.encode(Session.client_getredir()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '8', '\r', '\n', 'G', 'E', 'T', 'R', 'E', 'D', 'I', 'R', '\r', '\n']
 
-expect Command.encode(Session.client_id({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '2', '\r', '\n', 'I', 'D', '\r', '\n']
+expect Command.encode(Session.client_id()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '2', '\r', '\n', 'I', 'D', '\r', '\n']
 
-expect Command.encode(Session.client_info({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '4', '\r', '\n', 'I', 'N', 'F', 'O', '\r', '\n']
+expect Command.encode(Session.client_info()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '4', '\r', '\n', 'I', 'N', 'F', 'O', '\r', '\n']
 
 expect Command.encode(Session.client_kill({ first: [0, 1, 255], rest: [] })) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '4', '\r', '\n', 'K', 'I', 'L', 'L', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
@@ -269,13 +269,13 @@ expect Command.encode(Session.client_tracking(['O', 'N'], [[0, 1, 255], [0, 2, 2
 
 expect Command.encode(Session.client_tracking(['O', 'N'], [])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '8', '\r', '\n', 'T', 'R', 'A', 'C', 'K', 'I', 'N', 'G', '\r', '\n', '$', '2', '\r', '\n', 'O', 'N', '\r', '\n']
 
-expect Command.encode(Session.client_trackinginfo({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '1', '2', '\r', '\n', 'T', 'R', 'A', 'C', 'K', 'I', 'N', 'G', 'I', 'N', 'F', 'O', '\r', '\n']
+expect Command.encode(Session.client_trackinginfo()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '1', '2', '\r', '\n', 'T', 'R', 'A', 'C', 'K', 'I', 'N', 'G', 'I', 'N', 'F', 'O', '\r', '\n']
 
 expect Command.encode(Session.client_unblock(['1'], [[0, 2, 255], [0, 3, 255]])) == ['*', '5', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'U', 'N', 'B', 'L', 'O', 'C', 'K', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 3, 255, '\r', '\n']
 
 expect Command.encode(Session.client_unblock(['1'], [])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'U', 'N', 'B', 'L', 'O', 'C', 'K', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n']
 
-expect Command.encode(Session.client_unpause({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'U', 'N', 'P', 'A', 'U', 'S', 'E', '\r', '\n']
+expect Command.encode(Session.client_unpause()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'U', 'N', 'P', 'A', 'U', 'S', 'E', '\r', '\n']
 
 expect Command.encode(Session.echo([0, 1, 255])) == ['*', '2', '\r', '\n', '$', '4', '\r', '\n', 'E', 'C', 'H', 'O', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
@@ -287,8 +287,8 @@ expect Command.encode(Session.ping([[0, 1, 255], [0, 2, 255]])) == ['*', '3', '\
 
 expect Command.encode(Session.ping([])) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'P', 'I', 'N', 'G', '\r', '\n']
 
-expect Command.encode(Session.quit({})) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'Q', 'U', 'I', 'T', '\r', '\n']
+expect Command.encode(Session.quit()) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'Q', 'U', 'I', 'T', '\r', '\n']
 
-expect Command.encode(Session.reset({})) == ['*', '1', '\r', '\n', '$', '5', '\r', '\n', 'R', 'E', 'S', 'E', 'T', '\r', '\n']
+expect Command.encode(Session.reset()) == ['*', '1', '\r', '\n', '$', '5', '\r', '\n', 'R', 'E', 'S', 'E', 'T', '\r', '\n']
 
 expect Command.encode(Session.select(['1'])) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'S', 'E', 'L', 'E', 'C', 'T', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n']

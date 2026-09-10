@@ -162,8 +162,8 @@ Hashes :: [].{
 	himport_discard : Bytes.Bytes -> Request.Request(Bool, Reply.Error)
 	himport_discard = |name| Request.new(Command.new("HIMPORT", ["DISCARD", name]), Reply.integer_boolean)
 
-	himport_discard_all : {} -> Request.Request(I64, Reply.Error)
-	himport_discard_all = |_| Request.new(Command.new("HIMPORT", ["DISCARDALL"]), Reply.integer)
+	himport_discard_all : () -> Request.Request(I64, Reply.Error)
+	himport_discard_all = || Request.new(Command.new("HIMPORT", ["DISCARDALL"]), Reply.integer)
 }
 
 decimal : U64 -> Bytes.Bytes

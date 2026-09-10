@@ -310,7 +310,7 @@ run_batch : { count : U64, shape : [Deep, Flat] } -> Try(Measurement, [ProbeFail
 run_batch = |{ count, shape }| {
 	responses = List.repeat(Resp.Integer(1), count)
 	if shape == Flat {
-		request = Request.new(Command.ping({}), Reply.integer)
+		request = Request.new(Command.ping(), Reply.integer)
 		plan = Batch.all(List.repeat(request, count))
 		decoded = plan.decode(responses) ? |_| ProbeFailed("flat batch decoding failed")
 		if decoded.len() == count and decoded.all(|value| value == 1) {
@@ -344,7 +344,7 @@ make_deep_batch_model : U64 -> DeepBatchModel
 make_deep_batch_model = |count| {
 	leaf : DeepBatchModel
 	leaf = {
-		commands: [Command.ping({})],
+		commands: [Command.ping()],
 		decoder: |responses| if responses == [Resp.Integer(1)] Ok(1) else Err(DeepFailure),
 	}
 	if count <= 1 {
@@ -371,8 +371,8 @@ run_repeated_exchange! = |{ count, size }| {
 	wire = "$${size.to_str()}\r\n".to_utf8().concat(payload).append('\r').append('\n')
 	read_budget = Positive.from_u64(wire.len()) ? |_| ProbeFailed("repeated-exchange wire must be non-empty")
 	config = Config.{ read_size: read_budget, max_response_bytes: read_budget }
-	request = Request.new(Command.ping({}), Reply.bulk)
-	expected_write = Command.encode(Command.ping({}))
+	request = Request.new(Command.ping(), Reply.bulk)
+	expected_write = Command.encode(Command.ping())
 	var $checksum = 0.U64
 	var $iteration = 0.U64
 	while $iteration < count {
@@ -450,7 +450,7 @@ error_payload_bytes = |errors| {
 run_advertised_header : U64 -> Try(Measurement, [ProbeFailed(Str)])
 run_advertised_header = |size| {
 	wire = "$${size.to_str()}\r\n".to_utf8()
-	result = Decoder.feed(Decoder.init({}), wire)
+	result = Decoder.feed(Decoder.init(), wire)
 	if size <= Decoder.default_limits.max_bulk_length {
 		match result {
 			Progress({ decoder, values: [] }) if Decoder.buffered_len(decoder) == wire.len() => Ok(record("advertised-header-accepted", size, wire.len(), 1, Decoder.buffered_len(decoder)))
@@ -466,7 +466,7 @@ run_advertised_header = |size| {
 
 decode_fragmented : List(U8), U64 -> Try(List(Resp.Resp), [ProbeFailed(Str)])
 decode_fragmented = |wire, chunk_size| {
-	var $decoder = Decoder.init({})
+	var $decoder = Decoder.init()
 	var $values = []
 	var $offset = 0.U64
 	while $offset < wire.len() {

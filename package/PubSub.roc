@@ -46,8 +46,8 @@ PubSub := {}.{
 	## Construct `PUBSUB NUMPAT`.
 	## Available since Redis 2.8.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/pubsub-numpat/).
-	pubsub_numpat : {} -> Command.Command
-	pubsub_numpat = |_| {
+	pubsub_numpat : () -> Command.Command
+	pubsub_numpat = || {
 		Command.from_nonempty_bytes("PUBSUB", [['N', 'U', 'M', 'P', 'A', 'T']])
 	}
 
@@ -146,7 +146,7 @@ expect Command.encode(PubSub.pubsub_channels([[0, 1, 255], [0, 2, 255]])) == ['*
 
 expect Command.encode(PubSub.pubsub_channels([])) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'P', 'U', 'B', 'S', 'U', 'B', '\r', '\n', '$', '8', '\r', '\n', 'C', 'H', 'A', 'N', 'N', 'E', 'L', 'S', '\r', '\n']
 
-expect Command.encode(PubSub.pubsub_numpat({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'P', 'U', 'B', 'S', 'U', 'B', '\r', '\n', '$', '6', '\r', '\n', 'N', 'U', 'M', 'P', 'A', 'T', '\r', '\n']
+expect Command.encode(PubSub.pubsub_numpat()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'P', 'U', 'B', 'S', 'U', 'B', '\r', '\n', '$', '6', '\r', '\n', 'N', 'U', 'M', 'P', 'A', 'T', '\r', '\n']
 
 expect Command.encode(PubSub.pubsub_numsub([[0, 1, 255], [0, 2, 255]])) == ['*', '4', '\r', '\n', '$', '6', '\r', '\n', 'P', 'U', 'B', 'S', 'U', 'B', '\r', '\n', '$', '6', '\r', '\n', 'N', 'U', 'M', 'S', 'U', 'B', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 

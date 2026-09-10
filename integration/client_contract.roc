@@ -48,7 +48,7 @@ test_decoder_matrix! = |seed| {
 	expected = [Resp.BulkString($payload)]
 	var $split = 0.U64
 	while $split <= wire.len() {
-		match Decoder.feed(Decoder.init({}), wire.take_first($split)) {
+		match Decoder.feed(Decoder.init(), wire.take_first($split)) {
 			Failed(_) => {
 				return fail("first decoder fragment failed")
 			}
@@ -67,7 +67,7 @@ test_decoder_matrix! = |seed| {
 		}
 		$split = $split + 1
 	}
-	var $decoder = Decoder.init({})
+	var $decoder = Decoder.init()
 	var $values = []
 	var $index = 0.U64
 	while $index < wire.len() {
@@ -131,7 +131,7 @@ single_command_config = Config.{ max_commands: 1 }
 ## Failure categories must preserve the original platform and protocol errors.
 test_execute_failures! : {} => Try({}, [ContractFailed(Str), ..])
 test_execute_failures! = |_| {
-	request = Request.new(Command.ping({}), Reply.simple)
+	request = Request.new(Command.ping(), Reply.simple)
 	read_failure : Execute.Transport(_, _)
 	read_failure = { write_all!: |_| Ok({}), read!: |_| Err(TimedOut) }
 	match connection_request!(execution_config, request, read_failure) {
@@ -213,7 +213,7 @@ test_execute_failures! = |_| {
 			return fail("Execute conflated semantic decoding with protocol failure")
 		}
 	}
-	match Execute.no_reply!(tiny_execution_config, NoReply.unsafe_assume_suppressed([Command.ping({})]), { write_all!: |_| Err(WriteMustNotRun) }) {
+	match Execute.no_reply!(tiny_execution_config, NoReply.unsafe_assume_suppressed([Command.ping()]), { write_all!: |_| Err(WriteMustNotRun) }) {
 		Err(RequestRejected(RequestByteLimitExceeded({ limit: 13 }))) => {}
 		_ => {
 			return fail("Execute.no_reply! wrote an oversized request")
@@ -224,10 +224,10 @@ test_execute_failures! = |_| {
 
 test_execute! : {} => Try({}, [ContractFailed(Str), ..])
 test_execute! = |_| {
-	request = Request.new(Command.ping({}), Reply.simple)
+	request = Request.new(Command.ping(), Reply.simple)
 	transport : Execute.Transport(_, _)
 	transport = {
-		write_all!: |bytes| if bytes == Command.encode(Command.ping({})) {
+		write_all!: |bytes| if bytes == Command.encode(Command.ping()) {
 			Ok({})
 		} else {
 			Err(WrongBytes)
@@ -263,7 +263,7 @@ test_execute! = |_| {
 		}
 	}
 	integer_request = Request.new(
-		Command.ping({}),
+		Command.ping(),
 		|response| match response {
 			Resp.Integer(number) => Ok(number)
 			_ => Err(NotInteger)
@@ -271,7 +271,7 @@ test_execute! = |_| {
 	)
 	batch_transport : Execute.Transport(_, _)
 	batch_transport = {
-		write_all!: |bytes| if bytes == Command.encode_pipeline([Command.ping({}), Command.ping({}), Command.ping({})]) {
+		write_all!: |bytes| if bytes == Command.encode_pipeline([Command.ping(), Command.ping(), Command.ping()]) {
 			Ok({})
 		} else {
 			Err(WrongBatchBytes)
@@ -292,9 +292,9 @@ test_execute! = |_| {
 	}
 	match Execute.no_reply!(
 		execution_config,
-		NoReply.unsafe_assume_suppressed([Command.ping({})]),
+		NoReply.unsafe_assume_suppressed([Command.ping()]),
 		{
-			write_all!: |bytes| if bytes == Command.encode(Command.ping({})) {
+			write_all!: |bytes| if bytes == Command.encode(Command.ping()) {
 				Ok({})
 			} else {
 				Err(WrongBytes)
@@ -320,7 +320,7 @@ reuse_config = Config.{ max_response_bytes: 17, read_size: 31 }
 ## Coverage migrated from Client/Operation before removing those APIs.
 test_migrated_regressions! : {} => Try({}, [ContractFailed(Str), ..])
 test_migrated_regressions! = |_| {
-	request = Request.new(Command.ping({}), Reply.simple)
+	request = Request.new(Command.ping(), Reply.simple)
 	for ended in [False, True] {
 		transport : Execute.Transport(_, _)
 		transport = {
@@ -362,7 +362,7 @@ test_migrated_regressions! = |_| {
 		_ => return fail("response budget reset between batch elements")
 	}
 	binary = [0, '\r', '\n', 255]
-	commands = [Command.ping({}), Command.echo(binary)]
+	commands = [Command.ping(), Command.echo(binary)]
 	binary_transport : Execute.Transport(_, _)
 	binary_transport = {
 		write_all!: |bytes| if bytes == Command.encode_pipeline(commands) {
@@ -387,7 +387,7 @@ test_migrated_regressions! = |_| {
 				Err(UnexpectedReadLimit(limit))
 			},
 		}
-		okay = Request.new(Command.ping({}), Reply.okay)
+		okay = Request.new(Command.ping(), Reply.okay)
 		failure = connection_request!(reuse_config, okay, transport)
 		match failure {
 			Err(ServerError(bytes)) if bytes == Bytes.from_str("ERR rejected") => {}
@@ -412,7 +412,7 @@ test_migrated_regressions! = |_| {
 		Ok({}) => {}
 		_ => return fail("empty no-reply plan performed effects")
 	}
-	match Execute.no_reply!(execution_config, NoReply.unsafe_assume_suppressed([Command.ping({})]), { write_all!: |_| Err(FailedWrite) }) {
+	match Execute.no_reply!(execution_config, NoReply.unsafe_assume_suppressed([Command.ping()]), { write_all!: |_| Err(FailedWrite) }) {
 		Err(WriteFailed(FailedWrite)) => {}
 		_ => return fail("no-reply execution lost the platform write error")
 	}

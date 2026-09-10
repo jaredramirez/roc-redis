@@ -24,8 +24,8 @@ PubSub :: [].{
 	pubsub_shard_channels : Reply.Optional(Bytes.Bytes) -> Request.Request(List(Bytes.Bytes), Reply.Error)
 	pubsub_shard_channels = |pattern| Request.new(Command.new("PUBSUB", [Bytes.from_str("SHARDCHANNELS")].concat(pattern_args(pattern))), Decode.bytes_list)
 
-	pubsub_num_pat : {} -> Request.Request(I64, Reply.Error)
-	pubsub_num_pat = |_| Request.new(Command.new("PUBSUB", ["NUMPAT"]), Reply.integer)
+	pubsub_num_pat : () -> Request.Request(I64, Reply.Error)
+	pubsub_num_pat = || Request.new(Command.new("PUBSUB", ["NUMPAT"]), Reply.integer)
 
 	pubsub_num_sub : List(Bytes.Bytes) -> Request.Request(List(Subscribers), Reply.Error)
 	pubsub_num_sub = |channels| Request.new(Command.new("PUBSUB", [Bytes.from_str("NUMSUB")].concat(channels)), |reply| subscribers(reply, channels))

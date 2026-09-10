@@ -188,7 +188,7 @@ semantic_results_match = |results, failure_index, index|
 
 integer_request : {} -> Request.Request(I64, [NotInteger])
 integer_request = |_| Request.new(
-	Command.ping({}),
+	Command.ping(),
 	|response| match response {
 		Resp.Integer(value) => Ok(value)
 		_ => Err(NotInteger)
@@ -232,14 +232,14 @@ empty_no_reply! : {} => Bool
 empty_no_reply! = |_| Execute.no_reply!(default_config, NoReply.unsafe_assume_suppressed([]), { write_all!: |_| Err(MustNotWrite) }) == Ok({})
 
 successful_no_reply! : {} => Bool
-successful_no_reply! = |_| Execute.no_reply!(default_config, NoReply.unsafe_assume_suppressed([Command.ping({})]), { write_all!: |bytes| if bytes == ping_wire(1) Ok({}) else Err(WrongWire) }) == Ok({})
+successful_no_reply! = |_| Execute.no_reply!(default_config, NoReply.unsafe_assume_suppressed([Command.ping()]), { write_all!: |bytes| if bytes == ping_wire(1) Ok({}) else Err(WrongWire) }) == Ok({})
 
 failed_no_reply! : {} => Bool
-failed_no_reply! = |_| Execute.no_reply!(default_config, NoReply.unsafe_assume_suppressed([Command.ping({})]), { write_all!: |_| Err(InjectedWriteFailure) }) == Err(WriteFailed(InjectedWriteFailure))
+failed_no_reply! = |_| Execute.no_reply!(default_config, NoReply.unsafe_assume_suppressed([Command.ping()]), { write_all!: |_| Err(InjectedWriteFailure) }) == Err(WriteFailed(InjectedWriteFailure))
 
 rejected_no_reply! : {} => Bool
 rejected_no_reply! = |_| {
-	match Execute.no_reply!(one_command_config, NoReply.unsafe_assume_suppressed(List.repeat(Command.ping({}), 2)), { write_all!: |_| Err(WriteMustNotRun) }) {
+	match Execute.no_reply!(one_command_config, NoReply.unsafe_assume_suppressed(List.repeat(Command.ping(), 2)), { write_all!: |_| Err(WriteMustNotRun) }) {
 		Err(RequestRejected(CommandLimitExceeded({ actual, limit }))) => actual == 2 and limit == 1
 		_ => Bool.False
 	}

@@ -114,8 +114,8 @@ Hashes := {}.{
 	## Construct `HIMPORT DISCARDALL`.
 	## Available since Redis 8.10.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/himport-discardall/).
-	himport_discardall : {} -> Command.Command
-	himport_discardall = |_| {
+	himport_discardall : () -> Command.Command
+	himport_discardall = || {
 		Command.from_nonempty_bytes("HIMPORT", [['D', 'I', 'S', 'C', 'A', 'R', 'D', 'A', 'L', 'L']])
 	}
 
@@ -359,7 +359,7 @@ expect Command.encode(Hashes.hgetex([0, 1, 255], [], [0, 4, 255], [])) == ['*', 
 
 expect Command.encode(Hashes.himport_discard([0, 1, 255])) == ['*', '3', '\r', '\n', '$', '7', '\r', '\n', 'H', 'I', 'M', 'P', 'O', 'R', 'T', '\r', '\n', '$', '7', '\r', '\n', 'D', 'I', 'S', 'C', 'A', 'R', 'D', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Hashes.himport_discardall({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'H', 'I', 'M', 'P', 'O', 'R', 'T', '\r', '\n', '$', '1', '0', '\r', '\n', 'D', 'I', 'S', 'C', 'A', 'R', 'D', 'A', 'L', 'L', '\r', '\n']
+expect Command.encode(Hashes.himport_discardall()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'H', 'I', 'M', 'P', 'O', 'R', 'T', '\r', '\n', '$', '1', '0', '\r', '\n', 'D', 'I', 'S', 'C', 'A', 'R', 'D', 'A', 'L', 'L', '\r', '\n']
 
 expect Command.encode(Hashes.himport_prepare([0, 1, 255], [0, 2, 255], [[0, 3, 255]])) == ['*', '5', '\r', '\n', '$', '7', '\r', '\n', 'H', 'I', 'M', 'P', 'O', 'R', 'T', '\r', '\n', '$', '7', '\r', '\n', 'P', 'R', 'E', 'P', 'A', 'R', 'E', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 3, 255, '\r', '\n']
 

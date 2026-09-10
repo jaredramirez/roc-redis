@@ -194,8 +194,8 @@ Keyspace := {}.{
 	## Construct `RANDOMKEY`.
 	## Available since Redis 1.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/randomkey/).
-	randomkey : {} -> Command.Command
-	randomkey = |_| {
+	randomkey : () -> Command.Command
+	randomkey = || {
 		Command.from_nonempty_bytes("RANDOMKEY", [])
 	}
 
@@ -368,7 +368,7 @@ expect Command.encode(Keyspace.pexpiretime([0, 1, 255])) == ['*', '2', '\r', '\n
 
 expect Command.encode(Keyspace.pttl([0, 1, 255])) == ['*', '2', '\r', '\n', '$', '4', '\r', '\n', 'P', 'T', 'T', 'L', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Keyspace.randomkey({})) == ['*', '1', '\r', '\n', '$', '9', '\r', '\n', 'R', 'A', 'N', 'D', 'O', 'M', 'K', 'E', 'Y', '\r', '\n']
+expect Command.encode(Keyspace.randomkey()) == ['*', '1', '\r', '\n', '$', '9', '\r', '\n', 'R', 'A', 'N', 'D', 'O', 'M', 'K', 'E', 'Y', '\r', '\n']
 
 expect Command.encode(Keyspace.rename([0, 1, 255], [0, 2, 255])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'R', 'E', 'N', 'A', 'M', 'E', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 

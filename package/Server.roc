@@ -65,16 +65,16 @@ Server := {}.{
 	## Construct `ACL LIST`.
 	## Available since Redis 6.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/acl-list/).
-	acl_list : {} -> Command.Command
-	acl_list = |_| {
+	acl_list : () -> Command.Command
+	acl_list = || {
 		Command.from_nonempty_bytes("ACL", [['L', 'I', 'S', 'T']])
 	}
 
 	## Construct `ACL LOAD`.
 	## Available since Redis 6.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/acl-load/).
-	acl_load : {} -> Command.Command
-	acl_load = |_| {
+	acl_load : () -> Command.Command
+	acl_load = || {
 		Command.from_nonempty_bytes("ACL", [['L', 'O', 'A', 'D']])
 	}
 
@@ -91,8 +91,8 @@ Server := {}.{
 	## Construct `ACL SAVE`.
 	## Available since Redis 6.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/acl-save/).
-	acl_save : {} -> Command.Command
-	acl_save = |_| {
+	acl_save : () -> Command.Command
+	acl_save = || {
 		Command.from_nonempty_bytes("ACL", [['S', 'A', 'V', 'E']])
 	}
 
@@ -108,72 +108,72 @@ Server := {}.{
 	## Construct `ACL USERS`.
 	## Available since Redis 6.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/acl-users/).
-	acl_users : {} -> Command.Command
-	acl_users = |_| {
+	acl_users : () -> Command.Command
+	acl_users = || {
 		Command.from_nonempty_bytes("ACL", [['U', 'S', 'E', 'R', 'S']])
 	}
 
 	## Construct `ACL WHOAMI`.
 	## Available since Redis 6.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/acl-whoami/).
-	acl_whoami : {} -> Command.Command
-	acl_whoami = |_| {
+	acl_whoami : () -> Command.Command
+	acl_whoami = || {
 		Command.from_nonempty_bytes("ACL", [['W', 'H', 'O', 'A', 'M', 'I']])
 	}
 
 	## Construct `BACKUP ABORT`.
 	## Available since Redis 8.10.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/backup-abort/).
-	backup_abort : {} -> Command.Command
-	backup_abort = |_| {
+	backup_abort : () -> Command.Command
+	backup_abort = || {
 		Command.from_nonempty_bytes("BACKUP", [['A', 'B', 'O', 'R', 'T']])
 	}
 
 	## Construct `BACKUP CLEANUP`.
 	## Available since Redis 8.10.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/backup-cleanup/).
-	backup_cleanup : {} -> Command.Command
-	backup_cleanup = |_| {
+	backup_cleanup : () -> Command.Command
+	backup_cleanup = || {
 		Command.from_nonempty_bytes("BACKUP", [['C', 'L', 'E', 'A', 'N', 'U', 'P']])
 	}
 
 	## Construct `BACKUP LIST`.
 	## Available since Redis 8.10.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/backup-list/).
-	backup_list : {} -> Command.Command
-	backup_list = |_| {
+	backup_list : () -> Command.Command
+	backup_list = || {
 		Command.from_nonempty_bytes("BACKUP", [['L', 'I', 'S', 'T']])
 	}
 
 	## Construct `BACKUP SEAL`.
 	## Available since Redis 8.10.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/backup-seal/).
-	backup_seal : {} -> Command.Command
-	backup_seal = |_| {
+	backup_seal : () -> Command.Command
+	backup_seal = || {
 		Command.from_nonempty_bytes("BACKUP", [['S', 'E', 'A', 'L']])
 	}
 
 	## Construct `BACKUP START`.
 	## Available since Redis 8.10.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/backup-start/).
-	backup_start : {} -> Command.Command
-	backup_start = |_| {
+	backup_start : () -> Command.Command
+	backup_start = || {
 		Command.from_nonempty_bytes("BACKUP", [['S', 'T', 'A', 'R', 'T']])
 	}
 
 	## Construct `BACKUP STATUS`.
 	## Available since Redis 8.10.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/backup-status/).
-	backup_status : {} -> Command.Command
-	backup_status = |_| {
+	backup_status : () -> Command.Command
+	backup_status = || {
 		Command.from_nonempty_bytes("BACKUP", [['S', 'T', 'A', 'T', 'U', 'S']])
 	}
 
 	## Construct `BGREWRITEAOF`.
 	## Available since Redis 1.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/bgrewriteaof/).
-	bgrewriteaof : {} -> Command.Command
-	bgrewriteaof = |_| {
+	bgrewriteaof : () -> Command.Command
+	bgrewriteaof = || {
 		Command.from_nonempty_bytes("BGREWRITEAOF", [])
 	}
 
@@ -190,16 +190,16 @@ Server := {}.{
 	## Construct `COMMAND`.
 	## Available since Redis 2.8.13.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/command/).
-	command : {} -> Command.Command
-	command = |_| {
+	command : () -> Command.Command
+	command = || {
 		Command.from_nonempty_bytes("COMMAND", [])
 	}
 
 	## Construct `COMMAND COUNT`.
 	## Available since Redis 2.8.13.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/command-count/).
-	command_count : {} -> Command.Command
-	command_count = |_| {
+	command_count : () -> Command.Command
+	command_count = || {
 		Command.from_nonempty_bytes("COMMAND", [['C', 'O', 'U', 'N', 'T']])
 	}
 
@@ -262,16 +262,16 @@ Server := {}.{
 	## Construct `CONFIG RESETSTAT`.
 	## Available since Redis 2.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/config-resetstat/).
-	config_resetstat : {} -> Command.Command
-	config_resetstat = |_| {
+	config_resetstat : () -> Command.Command
+	config_resetstat = || {
 		Command.from_nonempty_bytes("CONFIG", [['R', 'E', 'S', 'E', 'T', 'S', 'T', 'A', 'T']])
 	}
 
 	## Construct `CONFIG REWRITE`.
 	## Available since Redis 2.8.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/config-rewrite/).
-	config_rewrite : {} -> Command.Command
-	config_rewrite = |_| {
+	config_rewrite : () -> Command.Command
+	config_rewrite = || {
 		Command.from_nonempty_bytes("CONFIG", [['R', 'E', 'W', 'R', 'I', 'T', 'E']])
 	}
 
@@ -288,8 +288,8 @@ Server := {}.{
 	## Construct `DBSIZE`.
 	## Available since Redis 1.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/dbsize/).
-	dbsize : {} -> Command.Command
-	dbsize = |_| {
+	dbsize : () -> Command.Command
+	dbsize = || {
 		Command.from_nonempty_bytes("DBSIZE", [])
 	}
 
@@ -326,16 +326,16 @@ Server := {}.{
 	## Construct `HOTKEYS GET`.
 	## Available since Redis 8.6.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/hotkeys-get/).
-	hotkeys_get : {} -> Command.Command
-	hotkeys_get = |_| {
+	hotkeys_get : () -> Command.Command
+	hotkeys_get = || {
 		Command.from_nonempty_bytes("HOTKEYS", [['G', 'E', 'T']])
 	}
 
 	## Construct `HOTKEYS RESET`.
 	## Available since Redis 8.6.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/hotkeys-reset/).
-	hotkeys_reset : {} -> Command.Command
-	hotkeys_reset = |_| {
+	hotkeys_reset : () -> Command.Command
+	hotkeys_reset = || {
 		Command.from_nonempty_bytes("HOTKEYS", [['R', 'E', 'S', 'E', 'T']])
 	}
 
@@ -352,8 +352,8 @@ Server := {}.{
 	## Construct `HOTKEYS STOP`.
 	## Available since Redis 8.6.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/hotkeys-stop/).
-	hotkeys_stop : {} -> Command.Command
-	hotkeys_stop = |_| {
+	hotkeys_stop : () -> Command.Command
+	hotkeys_stop = || {
 		Command.from_nonempty_bytes("HOTKEYS", [['S', 'T', 'O', 'P']])
 	}
 
@@ -369,16 +369,16 @@ Server := {}.{
 	## Construct `LASTSAVE`.
 	## Available since Redis 1.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/lastsave/).
-	lastsave : {} -> Command.Command
-	lastsave = |_| {
+	lastsave : () -> Command.Command
+	lastsave = || {
 		Command.from_nonempty_bytes("LASTSAVE", [])
 	}
 
 	## Construct `LATENCY DOCTOR`.
 	## Available since Redis 2.8.13.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/latency-doctor/).
-	latency_doctor : {} -> Command.Command
-	latency_doctor = |_| {
+	latency_doctor : () -> Command.Command
+	latency_doctor = || {
 		Command.from_nonempty_bytes("LATENCY", [['D', 'O', 'C', 'T', 'O', 'R']])
 	}
 
@@ -412,8 +412,8 @@ Server := {}.{
 	## Construct `LATENCY LATEST`.
 	## Available since Redis 2.8.13.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/latency-latest/).
-	latency_latest : {} -> Command.Command
-	latency_latest = |_| {
+	latency_latest : () -> Command.Command
+	latency_latest = || {
 		Command.from_nonempty_bytes("LATENCY", [['L', 'A', 'T', 'E', 'S', 'T']])
 	}
 
@@ -439,32 +439,32 @@ Server := {}.{
 	## Construct `MEMORY DOCTOR`.
 	## Available since Redis 4.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/memory-doctor/).
-	memory_doctor : {} -> Command.Command
-	memory_doctor = |_| {
+	memory_doctor : () -> Command.Command
+	memory_doctor = || {
 		Command.from_nonempty_bytes("MEMORY", [['D', 'O', 'C', 'T', 'O', 'R']])
 	}
 
 	## Construct `MEMORY MALLOC-STATS`.
 	## Available since Redis 4.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/memory-malloc-stats/).
-	memory_malloc_stats : {} -> Command.Command
-	memory_malloc_stats = |_| {
+	memory_malloc_stats : () -> Command.Command
+	memory_malloc_stats = || {
 		Command.from_nonempty_bytes("MEMORY", [['M', 'A', 'L', 'L', 'O', 'C', '-', 'S', 'T', 'A', 'T', 'S']])
 	}
 
 	## Construct `MEMORY PURGE`.
 	## Available since Redis 4.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/memory-purge/).
-	memory_purge : {} -> Command.Command
-	memory_purge = |_| {
+	memory_purge : () -> Command.Command
+	memory_purge = || {
 		Command.from_nonempty_bytes("MEMORY", [['P', 'U', 'R', 'G', 'E']])
 	}
 
 	## Construct `MEMORY STATS`.
 	## Available since Redis 4.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/memory-stats/).
-	memory_stats : {} -> Command.Command
-	memory_stats = |_| {
+	memory_stats : () -> Command.Command
+	memory_stats = || {
 		Command.from_nonempty_bytes("MEMORY", [['S', 'T', 'A', 'T', 'S']])
 	}
 
@@ -481,8 +481,8 @@ Server := {}.{
 	## Construct `MODULE LIST`.
 	## Available since Redis 4.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/module-list/).
-	module_list : {} -> Command.Command
-	module_list = |_| {
+	module_list : () -> Command.Command
+	module_list = || {
 		Command.from_nonempty_bytes("MODULE", [['L', 'I', 'S', 'T']])
 	}
 
@@ -517,8 +517,8 @@ Server := {}.{
 	## Construct `MONITOR`.
 	## Available since Redis 1.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/monitor/).
-	monitor : {} -> Command.Command
-	monitor = |_| {
+	monitor : () -> Command.Command
+	monitor = || {
 		Command.from_nonempty_bytes("MONITOR", [])
 	}
 
@@ -534,16 +534,16 @@ Server := {}.{
 	## Construct `ROLE`.
 	## Available since Redis 2.8.12.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/role/).
-	role : {} -> Command.Command
-	role = |_| {
+	role : () -> Command.Command
+	role = || {
 		Command.from_nonempty_bytes("ROLE", [])
 	}
 
 	## Construct `SAVE`.
 	## Available since Redis 1.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/save/).
-	save : {} -> Command.Command
-	save = |_| {
+	save : () -> Command.Command
+	save = || {
 		Command.from_nonempty_bytes("SAVE", [])
 	}
 
@@ -580,16 +580,16 @@ Server := {}.{
 	## Construct `SLOWLOG LEN`.
 	## Available since Redis 2.2.12.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/slowlog-len/).
-	slowlog_len : {} -> Command.Command
-	slowlog_len = |_| {
+	slowlog_len : () -> Command.Command
+	slowlog_len = || {
 		Command.from_nonempty_bytes("SLOWLOG", [['L', 'E', 'N']])
 	}
 
 	## Construct `SLOWLOG RESET`.
 	## Available since Redis 2.2.12.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/slowlog-reset/).
-	slowlog_reset : {} -> Command.Command
-	slowlog_reset = |_| {
+	slowlog_reset : () -> Command.Command
+	slowlog_reset = || {
 		Command.from_nonempty_bytes("SLOWLOG", [['R', 'E', 'S', 'E', 'T']])
 	}
 
@@ -605,8 +605,8 @@ Server := {}.{
 	## Construct `TIME`.
 	## Available since Redis 2.6.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/time/).
-	time : {} -> Command.Command
-	time = |_| {
+	time : () -> Command.Command
+	time = || {
 		Command.from_nonempty_bytes("TIME", [])
 	}
 
@@ -639,45 +639,45 @@ expect Command.encode(Server.acl_genpass([])) == ['*', '2', '\r', '\n', '$', '3'
 
 expect Command.encode(Server.acl_getuser([0, 1, 255])) == ['*', '3', '\r', '\n', '$', '3', '\r', '\n', 'A', 'C', 'L', '\r', '\n', '$', '7', '\r', '\n', 'G', 'E', 'T', 'U', 'S', 'E', 'R', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Server.acl_list({})) == ['*', '2', '\r', '\n', '$', '3', '\r', '\n', 'A', 'C', 'L', '\r', '\n', '$', '4', '\r', '\n', 'L', 'I', 'S', 'T', '\r', '\n']
+expect Command.encode(Server.acl_list()) == ['*', '2', '\r', '\n', '$', '3', '\r', '\n', 'A', 'C', 'L', '\r', '\n', '$', '4', '\r', '\n', 'L', 'I', 'S', 'T', '\r', '\n']
 
-expect Command.encode(Server.acl_load({})) == ['*', '2', '\r', '\n', '$', '3', '\r', '\n', 'A', 'C', 'L', '\r', '\n', '$', '4', '\r', '\n', 'L', 'O', 'A', 'D', '\r', '\n']
+expect Command.encode(Server.acl_load()) == ['*', '2', '\r', '\n', '$', '3', '\r', '\n', 'A', 'C', 'L', '\r', '\n', '$', '4', '\r', '\n', 'L', 'O', 'A', 'D', '\r', '\n']
 
 expect Command.encode(Server.acl_log([[0, 1, 255], [0, 2, 255]])) == ['*', '4', '\r', '\n', '$', '3', '\r', '\n', 'A', 'C', 'L', '\r', '\n', '$', '3', '\r', '\n', 'L', 'O', 'G', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 
 expect Command.encode(Server.acl_log([])) == ['*', '2', '\r', '\n', '$', '3', '\r', '\n', 'A', 'C', 'L', '\r', '\n', '$', '3', '\r', '\n', 'L', 'O', 'G', '\r', '\n']
 
-expect Command.encode(Server.acl_save({})) == ['*', '2', '\r', '\n', '$', '3', '\r', '\n', 'A', 'C', 'L', '\r', '\n', '$', '4', '\r', '\n', 'S', 'A', 'V', 'E', '\r', '\n']
+expect Command.encode(Server.acl_save()) == ['*', '2', '\r', '\n', '$', '3', '\r', '\n', 'A', 'C', 'L', '\r', '\n', '$', '4', '\r', '\n', 'S', 'A', 'V', 'E', '\r', '\n']
 
 expect Command.encode(Server.acl_setuser([0, 1, 255], [[0, 2, 255], [0, 3, 255]])) == ['*', '5', '\r', '\n', '$', '3', '\r', '\n', 'A', 'C', 'L', '\r', '\n', '$', '7', '\r', '\n', 'S', 'E', 'T', 'U', 'S', 'E', 'R', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 3, 255, '\r', '\n']
 
 expect Command.encode(Server.acl_setuser([0, 1, 255], [])) == ['*', '3', '\r', '\n', '$', '3', '\r', '\n', 'A', 'C', 'L', '\r', '\n', '$', '7', '\r', '\n', 'S', 'E', 'T', 'U', 'S', 'E', 'R', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Server.acl_users({})) == ['*', '2', '\r', '\n', '$', '3', '\r', '\n', 'A', 'C', 'L', '\r', '\n', '$', '5', '\r', '\n', 'U', 'S', 'E', 'R', 'S', '\r', '\n']
+expect Command.encode(Server.acl_users()) == ['*', '2', '\r', '\n', '$', '3', '\r', '\n', 'A', 'C', 'L', '\r', '\n', '$', '5', '\r', '\n', 'U', 'S', 'E', 'R', 'S', '\r', '\n']
 
-expect Command.encode(Server.acl_whoami({})) == ['*', '2', '\r', '\n', '$', '3', '\r', '\n', 'A', 'C', 'L', '\r', '\n', '$', '6', '\r', '\n', 'W', 'H', 'O', 'A', 'M', 'I', '\r', '\n']
+expect Command.encode(Server.acl_whoami()) == ['*', '2', '\r', '\n', '$', '3', '\r', '\n', 'A', 'C', 'L', '\r', '\n', '$', '6', '\r', '\n', 'W', 'H', 'O', 'A', 'M', 'I', '\r', '\n']
 
-expect Command.encode(Server.backup_abort({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'B', 'A', 'C', 'K', 'U', 'P', '\r', '\n', '$', '5', '\r', '\n', 'A', 'B', 'O', 'R', 'T', '\r', '\n']
+expect Command.encode(Server.backup_abort()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'B', 'A', 'C', 'K', 'U', 'P', '\r', '\n', '$', '5', '\r', '\n', 'A', 'B', 'O', 'R', 'T', '\r', '\n']
 
-expect Command.encode(Server.backup_cleanup({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'B', 'A', 'C', 'K', 'U', 'P', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'E', 'A', 'N', 'U', 'P', '\r', '\n']
+expect Command.encode(Server.backup_cleanup()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'B', 'A', 'C', 'K', 'U', 'P', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'E', 'A', 'N', 'U', 'P', '\r', '\n']
 
-expect Command.encode(Server.backup_list({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'B', 'A', 'C', 'K', 'U', 'P', '\r', '\n', '$', '4', '\r', '\n', 'L', 'I', 'S', 'T', '\r', '\n']
+expect Command.encode(Server.backup_list()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'B', 'A', 'C', 'K', 'U', 'P', '\r', '\n', '$', '4', '\r', '\n', 'L', 'I', 'S', 'T', '\r', '\n']
 
-expect Command.encode(Server.backup_seal({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'B', 'A', 'C', 'K', 'U', 'P', '\r', '\n', '$', '4', '\r', '\n', 'S', 'E', 'A', 'L', '\r', '\n']
+expect Command.encode(Server.backup_seal()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'B', 'A', 'C', 'K', 'U', 'P', '\r', '\n', '$', '4', '\r', '\n', 'S', 'E', 'A', 'L', '\r', '\n']
 
-expect Command.encode(Server.backup_start({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'B', 'A', 'C', 'K', 'U', 'P', '\r', '\n', '$', '5', '\r', '\n', 'S', 'T', 'A', 'R', 'T', '\r', '\n']
+expect Command.encode(Server.backup_start()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'B', 'A', 'C', 'K', 'U', 'P', '\r', '\n', '$', '5', '\r', '\n', 'S', 'T', 'A', 'R', 'T', '\r', '\n']
 
-expect Command.encode(Server.backup_status({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'B', 'A', 'C', 'K', 'U', 'P', '\r', '\n', '$', '6', '\r', '\n', 'S', 'T', 'A', 'T', 'U', 'S', '\r', '\n']
+expect Command.encode(Server.backup_status()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'B', 'A', 'C', 'K', 'U', 'P', '\r', '\n', '$', '6', '\r', '\n', 'S', 'T', 'A', 'T', 'U', 'S', '\r', '\n']
 
-expect Command.encode(Server.bgrewriteaof({})) == ['*', '1', '\r', '\n', '$', '1', '2', '\r', '\n', 'B', 'G', 'R', 'E', 'W', 'R', 'I', 'T', 'E', 'A', 'O', 'F', '\r', '\n']
+expect Command.encode(Server.bgrewriteaof()) == ['*', '1', '\r', '\n', '$', '1', '2', '\r', '\n', 'B', 'G', 'R', 'E', 'W', 'R', 'I', 'T', 'E', 'A', 'O', 'F', '\r', '\n']
 
 expect Command.encode(Server.bgsave([[0, 1, 255], [0, 2, 255]])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'B', 'G', 'S', 'A', 'V', 'E', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 
 expect Command.encode(Server.bgsave([])) == ['*', '1', '\r', '\n', '$', '6', '\r', '\n', 'B', 'G', 'S', 'A', 'V', 'E', '\r', '\n']
 
-expect Command.encode(Server.command({})) == ['*', '1', '\r', '\n', '$', '7', '\r', '\n', 'C', 'O', 'M', 'M', 'A', 'N', 'D', '\r', '\n']
+expect Command.encode(Server.command()) == ['*', '1', '\r', '\n', '$', '7', '\r', '\n', 'C', 'O', 'M', 'M', 'A', 'N', 'D', '\r', '\n']
 
-expect Command.encode(Server.command_count({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'O', 'M', 'M', 'A', 'N', 'D', '\r', '\n', '$', '5', '\r', '\n', 'C', 'O', 'U', 'N', 'T', '\r', '\n']
+expect Command.encode(Server.command_count()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'O', 'M', 'M', 'A', 'N', 'D', '\r', '\n', '$', '5', '\r', '\n', 'C', 'O', 'U', 'N', 'T', '\r', '\n']
 
 expect Command.encode(Server.command_docs([[0, 1, 255], [0, 2, 255]])) == ['*', '4', '\r', '\n', '$', '7', '\r', '\n', 'C', 'O', 'M', 'M', 'A', 'N', 'D', '\r', '\n', '$', '4', '\r', '\n', 'D', 'O', 'C', 'S', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 
@@ -703,15 +703,15 @@ expect Command.encode(Server.config_get([0, 1, 255], [[0, 2, 255]])) == ['*', '4
 
 expect Command.encode(Server.config_get([0, 1, 255], [])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'O', 'N', 'F', 'I', 'G', '\r', '\n', '$', '3', '\r', '\n', 'G', 'E', 'T', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Server.config_resetstat({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'O', 'N', 'F', 'I', 'G', '\r', '\n', '$', '9', '\r', '\n', 'R', 'E', 'S', 'E', 'T', 'S', 'T', 'A', 'T', '\r', '\n']
+expect Command.encode(Server.config_resetstat()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'O', 'N', 'F', 'I', 'G', '\r', '\n', '$', '9', '\r', '\n', 'R', 'E', 'S', 'E', 'T', 'S', 'T', 'A', 'T', '\r', '\n']
 
-expect Command.encode(Server.config_rewrite({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'O', 'N', 'F', 'I', 'G', '\r', '\n', '$', '7', '\r', '\n', 'R', 'E', 'W', 'R', 'I', 'T', 'E', '\r', '\n']
+expect Command.encode(Server.config_rewrite()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'O', 'N', 'F', 'I', 'G', '\r', '\n', '$', '7', '\r', '\n', 'R', 'E', 'W', 'R', 'I', 'T', 'E', '\r', '\n']
 
 expect Command.encode(Server.config_set({ parameter: [0, 1, 255], value: [0, 2, 255] }, [{ parameter: [0, 3, 255], value: [0, 4, 255] }])) == ['*', '6', '\r', '\n', '$', '6', '\r', '\n', 'C', 'O', 'N', 'F', 'I', 'G', '\r', '\n', '$', '3', '\r', '\n', 'S', 'E', 'T', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 3, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 4, 255, '\r', '\n']
 
 expect Command.encode(Server.config_set({ parameter: [0, 1, 255], value: [0, 2, 255] }, [])) == ['*', '4', '\r', '\n', '$', '6', '\r', '\n', 'C', 'O', 'N', 'F', 'I', 'G', '\r', '\n', '$', '3', '\r', '\n', 'S', 'E', 'T', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 
-expect Command.encode(Server.dbsize({})) == ['*', '1', '\r', '\n', '$', '6', '\r', '\n', 'D', 'B', 'S', 'I', 'Z', 'E', '\r', '\n']
+expect Command.encode(Server.dbsize()) == ['*', '1', '\r', '\n', '$', '6', '\r', '\n', 'D', 'B', 'S', 'I', 'Z', 'E', '\r', '\n']
 
 expect Command.encode(Server.failover([[0, 1, 255], [0, 2, 255]])) == ['*', '3', '\r', '\n', '$', '8', '\r', '\n', 'F', 'A', 'I', 'L', 'O', 'V', 'E', 'R', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 
@@ -725,23 +725,23 @@ expect Command.encode(Server.flushdb([[0, 1, 255], [0, 2, 255]])) == ['*', '3', 
 
 expect Command.encode(Server.flushdb([])) == ['*', '1', '\r', '\n', '$', '7', '\r', '\n', 'F', 'L', 'U', 'S', 'H', 'D', 'B', '\r', '\n']
 
-expect Command.encode(Server.hotkeys_get({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'H', 'O', 'T', 'K', 'E', 'Y', 'S', '\r', '\n', '$', '3', '\r', '\n', 'G', 'E', 'T', '\r', '\n']
+expect Command.encode(Server.hotkeys_get()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'H', 'O', 'T', 'K', 'E', 'Y', 'S', '\r', '\n', '$', '3', '\r', '\n', 'G', 'E', 'T', '\r', '\n']
 
-expect Command.encode(Server.hotkeys_reset({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'H', 'O', 'T', 'K', 'E', 'Y', 'S', '\r', '\n', '$', '5', '\r', '\n', 'R', 'E', 'S', 'E', 'T', '\r', '\n']
+expect Command.encode(Server.hotkeys_reset()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'H', 'O', 'T', 'K', 'E', 'Y', 'S', '\r', '\n', '$', '5', '\r', '\n', 'R', 'E', 'S', 'E', 'T', '\r', '\n']
 
 expect Command.encode(Server.hotkeys_start([[0, 1, 255], [0, 2, 255]])) == ['*', '4', '\r', '\n', '$', '7', '\r', '\n', 'H', 'O', 'T', 'K', 'E', 'Y', 'S', '\r', '\n', '$', '5', '\r', '\n', 'S', 'T', 'A', 'R', 'T', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 
 expect Command.encode(Server.hotkeys_start([])) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'H', 'O', 'T', 'K', 'E', 'Y', 'S', '\r', '\n', '$', '5', '\r', '\n', 'S', 'T', 'A', 'R', 'T', '\r', '\n']
 
-expect Command.encode(Server.hotkeys_stop({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'H', 'O', 'T', 'K', 'E', 'Y', 'S', '\r', '\n', '$', '4', '\r', '\n', 'S', 'T', 'O', 'P', '\r', '\n']
+expect Command.encode(Server.hotkeys_stop()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'H', 'O', 'T', 'K', 'E', 'Y', 'S', '\r', '\n', '$', '4', '\r', '\n', 'S', 'T', 'O', 'P', '\r', '\n']
 
 expect Command.encode(Server.info([[0, 1, 255], [0, 2, 255]])) == ['*', '3', '\r', '\n', '$', '4', '\r', '\n', 'I', 'N', 'F', 'O', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 
 expect Command.encode(Server.info([])) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'I', 'N', 'F', 'O', '\r', '\n']
 
-expect Command.encode(Server.lastsave({})) == ['*', '1', '\r', '\n', '$', '8', '\r', '\n', 'L', 'A', 'S', 'T', 'S', 'A', 'V', 'E', '\r', '\n']
+expect Command.encode(Server.lastsave()) == ['*', '1', '\r', '\n', '$', '8', '\r', '\n', 'L', 'A', 'S', 'T', 'S', 'A', 'V', 'E', '\r', '\n']
 
-expect Command.encode(Server.latency_doctor({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'L', 'A', 'T', 'E', 'N', 'C', 'Y', '\r', '\n', '$', '6', '\r', '\n', 'D', 'O', 'C', 'T', 'O', 'R', '\r', '\n']
+expect Command.encode(Server.latency_doctor()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'L', 'A', 'T', 'E', 'N', 'C', 'Y', '\r', '\n', '$', '6', '\r', '\n', 'D', 'O', 'C', 'T', 'O', 'R', '\r', '\n']
 
 expect Command.encode(Server.latency_graph([0, 1, 255])) == ['*', '3', '\r', '\n', '$', '7', '\r', '\n', 'L', 'A', 'T', 'E', 'N', 'C', 'Y', '\r', '\n', '$', '5', '\r', '\n', 'G', 'R', 'A', 'P', 'H', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
@@ -751,7 +751,7 @@ expect Command.encode(Server.latency_histogram([])) == ['*', '2', '\r', '\n', '$
 
 expect Command.encode(Server.latency_history([0, 1, 255])) == ['*', '3', '\r', '\n', '$', '7', '\r', '\n', 'L', 'A', 'T', 'E', 'N', 'C', 'Y', '\r', '\n', '$', '7', '\r', '\n', 'H', 'I', 'S', 'T', 'O', 'R', 'Y', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Server.latency_latest({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'L', 'A', 'T', 'E', 'N', 'C', 'Y', '\r', '\n', '$', '6', '\r', '\n', 'L', 'A', 'T', 'E', 'S', 'T', '\r', '\n']
+expect Command.encode(Server.latency_latest()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'L', 'A', 'T', 'E', 'N', 'C', 'Y', '\r', '\n', '$', '6', '\r', '\n', 'L', 'A', 'T', 'E', 'S', 'T', '\r', '\n']
 
 expect Command.encode(Server.latency_reset([[0, 1, 255], [0, 2, 255]])) == ['*', '4', '\r', '\n', '$', '7', '\r', '\n', 'L', 'A', 'T', 'E', 'N', 'C', 'Y', '\r', '\n', '$', '5', '\r', '\n', 'R', 'E', 'S', 'E', 'T', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 
@@ -761,19 +761,19 @@ expect Command.encode(Server.lolwut([[0, 1, 255], [0, 2, 255]])) == ['*', '3', '
 
 expect Command.encode(Server.lolwut([])) == ['*', '1', '\r', '\n', '$', '6', '\r', '\n', 'L', 'O', 'L', 'W', 'U', 'T', '\r', '\n']
 
-expect Command.encode(Server.memory_doctor({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'M', 'E', 'M', 'O', 'R', 'Y', '\r', '\n', '$', '6', '\r', '\n', 'D', 'O', 'C', 'T', 'O', 'R', '\r', '\n']
+expect Command.encode(Server.memory_doctor()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'M', 'E', 'M', 'O', 'R', 'Y', '\r', '\n', '$', '6', '\r', '\n', 'D', 'O', 'C', 'T', 'O', 'R', '\r', '\n']
 
-expect Command.encode(Server.memory_malloc_stats({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'M', 'E', 'M', 'O', 'R', 'Y', '\r', '\n', '$', '1', '2', '\r', '\n', 'M', 'A', 'L', 'L', 'O', 'C', '-', 'S', 'T', 'A', 'T', 'S', '\r', '\n']
+expect Command.encode(Server.memory_malloc_stats()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'M', 'E', 'M', 'O', 'R', 'Y', '\r', '\n', '$', '1', '2', '\r', '\n', 'M', 'A', 'L', 'L', 'O', 'C', '-', 'S', 'T', 'A', 'T', 'S', '\r', '\n']
 
-expect Command.encode(Server.memory_purge({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'M', 'E', 'M', 'O', 'R', 'Y', '\r', '\n', '$', '5', '\r', '\n', 'P', 'U', 'R', 'G', 'E', '\r', '\n']
+expect Command.encode(Server.memory_purge()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'M', 'E', 'M', 'O', 'R', 'Y', '\r', '\n', '$', '5', '\r', '\n', 'P', 'U', 'R', 'G', 'E', '\r', '\n']
 
-expect Command.encode(Server.memory_stats({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'M', 'E', 'M', 'O', 'R', 'Y', '\r', '\n', '$', '5', '\r', '\n', 'S', 'T', 'A', 'T', 'S', '\r', '\n']
+expect Command.encode(Server.memory_stats()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'M', 'E', 'M', 'O', 'R', 'Y', '\r', '\n', '$', '5', '\r', '\n', 'S', 'T', 'A', 'T', 'S', '\r', '\n']
 
 expect Command.encode(Server.memory_usage([0, 1, 255], [[0, 2, 255], [0, 3, 255]])) == ['*', '5', '\r', '\n', '$', '6', '\r', '\n', 'M', 'E', 'M', 'O', 'R', 'Y', '\r', '\n', '$', '5', '\r', '\n', 'U', 'S', 'A', 'G', 'E', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 3, 255, '\r', '\n']
 
 expect Command.encode(Server.memory_usage([0, 1, 255], [])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'M', 'E', 'M', 'O', 'R', 'Y', '\r', '\n', '$', '5', '\r', '\n', 'U', 'S', 'A', 'G', 'E', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Server.module_list({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'M', 'O', 'D', 'U', 'L', 'E', '\r', '\n', '$', '4', '\r', '\n', 'L', 'I', 'S', 'T', '\r', '\n']
+expect Command.encode(Server.module_list()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'M', 'O', 'D', 'U', 'L', 'E', '\r', '\n', '$', '4', '\r', '\n', 'L', 'I', 'S', 'T', '\r', '\n']
 
 expect Command.encode(Server.module_load([0, 1, 255], [[0, 2, 255], [0, 3, 255]])) == ['*', '5', '\r', '\n', '$', '6', '\r', '\n', 'M', 'O', 'D', 'U', 'L', 'E', '\r', '\n', '$', '4', '\r', '\n', 'L', 'O', 'A', 'D', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 3, 255, '\r', '\n']
 
@@ -785,13 +785,13 @@ expect Command.encode(Server.module_loadex([0, 1, 255], [])) == ['*', '3', '\r',
 
 expect Command.encode(Server.module_unload([0, 1, 255])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'M', 'O', 'D', 'U', 'L', 'E', '\r', '\n', '$', '6', '\r', '\n', 'U', 'N', 'L', 'O', 'A', 'D', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Server.monitor({})) == ['*', '1', '\r', '\n', '$', '7', '\r', '\n', 'M', 'O', 'N', 'I', 'T', 'O', 'R', '\r', '\n']
+expect Command.encode(Server.monitor()) == ['*', '1', '\r', '\n', '$', '7', '\r', '\n', 'M', 'O', 'N', 'I', 'T', 'O', 'R', '\r', '\n']
 
 expect Command.encode(Server.replicaof({ first: [0, 1, 255], rest: [['2']] })) == ['*', '3', '\r', '\n', '$', '9', '\r', '\n', 'R', 'E', 'P', 'L', 'I', 'C', 'A', 'O', 'F', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '1', '\r', '\n', '2', '\r', '\n']
 
-expect Command.encode(Server.role({})) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'R', 'O', 'L', 'E', '\r', '\n']
+expect Command.encode(Server.role()) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'R', 'O', 'L', 'E', '\r', '\n']
 
-expect Command.encode(Server.save({})) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'S', 'A', 'V', 'E', '\r', '\n']
+expect Command.encode(Server.save()) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'S', 'A', 'V', 'E', '\r', '\n']
 
 expect Command.encode(Server.shutdown([[0, 1, 255], [0, 2, 255]])) == ['*', '3', '\r', '\n', '$', '8', '\r', '\n', 'S', 'H', 'U', 'T', 'D', 'O', 'W', 'N', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 
@@ -803,13 +803,13 @@ expect Command.encode(Server.slowlog_get([[0, 1, 255], [0, 2, 255]])) == ['*', '
 
 expect Command.encode(Server.slowlog_get([])) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'S', 'L', 'O', 'W', 'L', 'O', 'G', '\r', '\n', '$', '3', '\r', '\n', 'G', 'E', 'T', '\r', '\n']
 
-expect Command.encode(Server.slowlog_len({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'S', 'L', 'O', 'W', 'L', 'O', 'G', '\r', '\n', '$', '3', '\r', '\n', 'L', 'E', 'N', '\r', '\n']
+expect Command.encode(Server.slowlog_len()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'S', 'L', 'O', 'W', 'L', 'O', 'G', '\r', '\n', '$', '3', '\r', '\n', 'L', 'E', 'N', '\r', '\n']
 
-expect Command.encode(Server.slowlog_reset({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'S', 'L', 'O', 'W', 'L', 'O', 'G', '\r', '\n', '$', '5', '\r', '\n', 'R', 'E', 'S', 'E', 'T', '\r', '\n']
+expect Command.encode(Server.slowlog_reset()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'S', 'L', 'O', 'W', 'L', 'O', 'G', '\r', '\n', '$', '5', '\r', '\n', 'R', 'E', 'S', 'E', 'T', '\r', '\n']
 
 expect Command.encode(Server.swapdb(['1'], ['2'])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'S', 'W', 'A', 'P', 'D', 'B', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n', '$', '1', '\r', '\n', '2', '\r', '\n']
 
-expect Command.encode(Server.time({})) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'T', 'I', 'M', 'E', '\r', '\n']
+expect Command.encode(Server.time()) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'T', 'I', 'M', 'E', '\r', '\n']
 
 expect Command.encode(Server.trimslots({ startslot: ['1'], endslot: ['2'] }, [{ startslot: ['3'], endslot: ['4'] }])) == ['*', '7', '\r', '\n', '$', '9', '\r', '\n', 'T', 'R', 'I', 'M', 'S', 'L', 'O', 'T', 'S', '\r', '\n', '$', '6', '\r', '\n', 'R', 'A', 'N', 'G', 'E', 'S', '\r', '\n', '$', '1', '\r', '\n', '2', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n', '$', '1', '\r', '\n', '2', '\r', '\n', '$', '1', '\r', '\n', '3', '\r', '\n', '$', '1', '\r', '\n', '4', '\r', '\n']
 

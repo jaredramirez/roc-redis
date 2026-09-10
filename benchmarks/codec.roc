@@ -113,7 +113,7 @@ run = |workload, iterations, fixtures| {
 				return Err(CodecFailed("encoded bytes differ"))
 			}
 		} else {
-			match Decoder.feed(Decoder.init({}), fixture.response) {
+			match Decoder.feed(Decoder.init(), fixture.response) {
 				Progress({ decoder, values: [Resp.BulkString(payload)] }) if payload == fixture.payload and Decoder.finish(decoder).is_ok() => {}
 				_ => return Err(CodecFailed("decoded fixture differs"))
 			}

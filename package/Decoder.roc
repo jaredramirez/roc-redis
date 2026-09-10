@@ -218,8 +218,8 @@ Decoder := {
 	}
 
 	## Construct an empty decoder with [Decoder.default_limits].
-	init : {} -> Decoder
-	init = |_|
+	init : () -> Decoder
+	init = ||
 		new_decoder(Decoder.default_limits)
 
 	## Construct an empty decoder with caller-selected limits.
@@ -334,7 +334,7 @@ expect {
 }
 
 ## A large advertised payload is rejected without receiving/allocating it.
-expect match Decoder.feed(Decoder.init({}), "$8388609\r\n".to_utf8()) {
+expect match Decoder.feed(Decoder.init(), "$8388609\r\n".to_utf8()) {
 	Failed({ completed: [], error: BulkLengthLimitExceeded({ actual: 8_388_609, at: 0, limit: 8_388_608 }) }) => True
 	_ => False
 }
@@ -743,7 +743,7 @@ get_or_zero = |bytes, index|
 
 decode_one : List(U8) -> Try({ decoder : Decoder, value : Resp.Resp }, [Incomplete, Malformed(Decoder.DecodeError)])
 decode_one = |bytes|
-	match Decoder.feed(Decoder.init({}), bytes) {
+	match Decoder.feed(Decoder.init(), bytes) {
 		Progress({ decoder, values: [value] }) => Ok({ decoder, value })
 		Progress(_) => Err(Incomplete)
 		Failed({ error, .. }) => Err(Malformed(error))
@@ -784,7 +784,7 @@ expect {
 ## Multiple replies are emitted in order and a partial tail resumes without
 ## re-emitting already completed values.
 expect {
-	first = Decoder.feed(Decoder.init({}), Str.to_utf8("+OK\r\n:2\r\n$5\r\nhe"))
+	first = Decoder.feed(Decoder.init(), Str.to_utf8("+OK\r\n:2\r\n$5\r\nhe"))
 	match first {
 		Failed(_) => False
 		Progress({ decoder, values }) =>
@@ -842,7 +842,7 @@ all_two_part_splits_work = |wire, expected, split|
 	} else {
 		first = wire.sublist({ start: 0, len: split })
 		second = wire.sublist({ start: split, len: wire.len() - split })
-		match Decoder.feed(Decoder.init({}), first) {
+		match Decoder.feed(Decoder.init(), first) {
 			Failed(_) => False
 			Progress({ decoder, values: first_values }) =>
 				match Decoder.feed(decoder, second) {
@@ -859,7 +859,7 @@ all_two_part_splits_work = |wire, expected, split|
 expect {
 	wire = Str.to_utf8("*2\r\n$4\r\nPONG\r\n:123\r\n")
 	expected = Array([BulkString(Str.to_utf8("PONG")), Integer(123)])
-	feed_single_bytes(Decoder.init({}), wire, 0, []) == SingleByteDone([expected])
+	feed_single_bytes(Decoder.init(), wire, 0, []) == SingleByteDone([expected])
 }
 
 SingleByteResult : [SingleByteDone(List(Resp.Resp)), SingleByteFailed]
@@ -882,7 +882,7 @@ feed_single_bytes = |decoder, wire, index, values|
 
 ## Truncation reports which part of the frame is incomplete.
 expect {
-	match Decoder.feed(Decoder.init({}), Str.to_utf8("$5\r\nhel")) {
+	match Decoder.feed(Decoder.init(), Str.to_utf8("$5\r\nhel")) {
 		Failed(_) => False
 		Progress({ decoder, values }) =>
 			values.is_empty() and Decoder.finish(decoder) == Err(UnexpectedEnd({ at: 7, context: BulkData({ remaining: 2 }) }))
@@ -890,28 +890,28 @@ expect {
 }
 
 expect {
-	match Decoder.feed(Decoder.init({}), Str.to_utf8("+OK\r")) {
+	match Decoder.feed(Decoder.init(), Str.to_utf8("+OK\r")) {
 		Progress({ decoder, values: [] }) => Decoder.finish(decoder) == Err(UnexpectedEnd({ at: 4, context: LineFeed }))
 		_ => False
 	}
 }
 
 expect {
-	match Decoder.feed(Decoder.init({}), Str.to_utf8("$0\r\n")) {
+	match Decoder.feed(Decoder.init(), Str.to_utf8("$0\r\n")) {
 		Progress({ decoder, values: [] }) => Decoder.finish(decoder) == Err(UnexpectedEnd({ at: 4, context: BulkCarriageReturn }))
 		_ => False
 	}
 }
 
 expect {
-	match Decoder.feed(Decoder.init({}), Str.to_utf8("$0\r\n\r")) {
+	match Decoder.feed(Decoder.init(), Str.to_utf8("$0\r\n\r")) {
 		Progress({ decoder, values: [] }) => Decoder.finish(decoder) == Err(UnexpectedEnd({ at: 5, context: BulkLineFeed }))
 		_ => False
 	}
 }
 
 expect {
-	match Decoder.feed(Decoder.init({}), Str.to_utf8("*2\r\n:1\r\n")) {
+	match Decoder.feed(Decoder.init(), Str.to_utf8("*2\r\n:1\r\n")) {
 		Progress({ decoder, values: [] }) => Decoder.finish(decoder) == Err(UnexpectedEnd({ at: 8, context: ArrayItems({ remaining: 1 }) }))
 		_ => False
 	}
@@ -940,7 +940,7 @@ expect invalid_integer(Str.to_utf8(":+\r\n"))
 
 invalid_integer : List(U8) -> Bool
 invalid_integer = |wire|
-	match Decoder.feed(Decoder.init({}), wire) {
+	match Decoder.feed(Decoder.init(), wire) {
 		Failed({ error: InvalidInteger(_), .. }) => True
 		_ => False
 	}
@@ -962,14 +962,14 @@ expect invalid_array_length(Str.to_utf8("*-01\r\n"))
 
 invalid_bulk_length : List(U8) -> Bool
 invalid_bulk_length = |wire|
-	match Decoder.feed(Decoder.init({}), wire) {
+	match Decoder.feed(Decoder.init(), wire) {
 		Failed({ error: InvalidBulkLength(_), .. }) => True
 		_ => False
 	}
 
 invalid_array_length : List(U8) -> Bool
 invalid_array_length = |wire|
-	match Decoder.feed(Decoder.init({}), wire) {
+	match Decoder.feed(Decoder.init(), wire) {
 		Failed({ error: InvalidArrayLength(_), .. }) => True
 		_ => False
 	}
@@ -977,21 +977,21 @@ invalid_array_length = |wire|
 ## The first invalid bulk terminator byte fails immediately, without waiting
 ## for another byte or end-of-stream.
 expect {
-	match Decoder.feed(Decoder.init({}), Str.to_utf8("$2\r\nokX")) {
+	match Decoder.feed(Decoder.init(), Str.to_utf8("$2\r\nokX")) {
 		Failed({ completed: [], error: ExpectedBulkTerminator({ actual: 88, at: 6, expected: 13 }) }) => True
 		_ => False
 	}
 }
 
 expect {
-	match Decoder.feed(Decoder.init({}), Str.to_utf8("+OK\rX")) {
+	match Decoder.feed(Decoder.init(), Str.to_utf8("+OK\rX")) {
 		Failed({ completed: [], error: InvalidLineEnding({ at: 4 }) }) => True
 		_ => False
 	}
 }
 
 expect {
-	match Decoder.feed(Decoder.init({}), Str.to_utf8("$0\r\n\rX")) {
+	match Decoder.feed(Decoder.init(), Str.to_utf8("$0\r\n\rX")) {
 		Failed({ completed: [], error: ExpectedBulkTerminator({ actual: 88, at: 5, expected: 10 }) }) => True
 		_ => False
 	}
@@ -1009,7 +1009,7 @@ expect invalid_array_length(Str.to_utf8("*18446744073709551616\r\n"))
 
 ## Complete replies preceding a malformed frame are preserved.
 expect {
-	match Decoder.feed(Decoder.init({}), Str.to_utf8("+OK\r\n?")) {
+	match Decoder.feed(Decoder.init(), Str.to_utf8("+OK\r\n?")) {
 		Failed({ completed: [SimpleString(bytes)], error: UnknownType({ at: 0, byte: 63 }) }) => bytes == Str.to_utf8("OK")
 		_ => False
 	}

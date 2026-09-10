@@ -17,8 +17,8 @@ Cluster := {}.{
 	## Construct `ASKING`.
 	## Available since Redis 3.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/asking/).
-	asking : {} -> Command.Command
-	asking = |_| {
+	asking : () -> Command.Command
+	asking = || {
 		Command.from_nonempty_bytes("ASKING", [])
 	}
 
@@ -45,8 +45,8 @@ Cluster := {}.{
 	## Construct `CLUSTER BUMPEPOCH`.
 	## Available since Redis 3.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/cluster-bumpepoch/).
-	cluster_bumpepoch : {} -> Command.Command
-	cluster_bumpepoch = |_| {
+	cluster_bumpepoch : () -> Command.Command
+	cluster_bumpepoch = || {
 		Command.from_nonempty_bytes("CLUSTER", [['B', 'U', 'M', 'P', 'E', 'P', 'O', 'C', 'H']])
 	}
 
@@ -101,8 +101,8 @@ Cluster := {}.{
 	## Construct `CLUSTER FLUSHSLOTS`.
 	## Available since Redis 3.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/cluster-flushslots/).
-	cluster_flushslots : {} -> Command.Command
-	cluster_flushslots = |_| {
+	cluster_flushslots : () -> Command.Command
+	cluster_flushslots = || {
 		Command.from_nonempty_bytes("CLUSTER", [['F', 'L', 'U', 'S', 'H', 'S', 'L', 'O', 'T', 'S']])
 	}
 
@@ -127,8 +127,8 @@ Cluster := {}.{
 	## Construct `CLUSTER INFO`.
 	## Available since Redis 3.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/cluster-info/).
-	cluster_info : {} -> Command.Command
-	cluster_info = |_| {
+	cluster_info : () -> Command.Command
+	cluster_info = || {
 		Command.from_nonempty_bytes("CLUSTER", [['I', 'N', 'F', 'O']])
 	}
 
@@ -144,8 +144,8 @@ Cluster := {}.{
 	## Construct `CLUSTER LINKS`.
 	## Available since Redis 7.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/cluster-links/).
-	cluster_links : {} -> Command.Command
-	cluster_links = |_| {
+	cluster_links : () -> Command.Command
+	cluster_links = || {
 		Command.from_nonempty_bytes("CLUSTER", [['L', 'I', 'N', 'K', 'S']])
 	}
 
@@ -171,24 +171,24 @@ Cluster := {}.{
 	## Construct `CLUSTER MYID`.
 	## Available since Redis 3.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/cluster-myid/).
-	cluster_myid : {} -> Command.Command
-	cluster_myid = |_| {
+	cluster_myid : () -> Command.Command
+	cluster_myid = || {
 		Command.from_nonempty_bytes("CLUSTER", [['M', 'Y', 'I', 'D']])
 	}
 
 	## Construct `CLUSTER MYSHARDID`.
 	## Available since Redis 7.2.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/cluster-myshardid/).
-	cluster_myshardid : {} -> Command.Command
-	cluster_myshardid = |_| {
+	cluster_myshardid : () -> Command.Command
+	cluster_myshardid = || {
 		Command.from_nonempty_bytes("CLUSTER", [['M', 'Y', 'S', 'H', 'A', 'R', 'D', 'I', 'D']])
 	}
 
 	## Construct `CLUSTER NODES`.
 	## Available since Redis 3.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/cluster-nodes/).
-	cluster_nodes : {} -> Command.Command
-	cluster_nodes = |_| {
+	cluster_nodes : () -> Command.Command
+	cluster_nodes = || {
 		Command.from_nonempty_bytes("CLUSTER", [['N', 'O', 'D', 'E', 'S']])
 	}
 
@@ -223,8 +223,8 @@ Cluster := {}.{
 	## Construct `CLUSTER SAVECONFIG`.
 	## Available since Redis 3.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/cluster-saveconfig/).
-	cluster_saveconfig : {} -> Command.Command
-	cluster_saveconfig = |_| {
+	cluster_saveconfig : () -> Command.Command
+	cluster_saveconfig = || {
 		Command.from_nonempty_bytes("CLUSTER", [['S', 'A', 'V', 'E', 'C', 'O', 'N', 'F', 'I', 'G']])
 	}
 
@@ -249,8 +249,8 @@ Cluster := {}.{
 	## Construct `CLUSTER SHARDS`.
 	## Available since Redis 7.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/cluster-shards/).
-	cluster_shards : {} -> Command.Command
-	cluster_shards = |_| {
+	cluster_shards : () -> Command.Command
+	cluster_shards = || {
 		Command.from_nonempty_bytes("CLUSTER", [['S', 'H', 'A', 'R', 'D', 'S']])
 	}
 
@@ -277,29 +277,29 @@ Cluster := {}.{
 	## Available since Redis 3.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/cluster-slots/).
 	## Deprecated by Redis; retained for catalog completeness.
-	cluster_slots : {} -> Command.Command
-	cluster_slots = |_| {
+	cluster_slots : () -> Command.Command
+	cluster_slots = || {
 		Command.from_nonempty_bytes("CLUSTER", [['S', 'L', 'O', 'T', 'S']])
 	}
 
 	## Construct `READONLY`.
 	## Available since Redis 3.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/readonly/).
-	readonly : {} -> Command.Command
-	readonly = |_| {
+	readonly : () -> Command.Command
+	readonly = || {
 		Command.from_nonempty_bytes("READONLY", [])
 	}
 
 	## Construct `READWRITE`.
 	## Available since Redis 3.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/readwrite/).
-	readwrite : {} -> Command.Command
-	readwrite = |_| {
+	readwrite : () -> Command.Command
+	readwrite = || {
 		Command.from_nonempty_bytes("READWRITE", [])
 	}
 }
 
-expect Command.encode(Cluster.asking({})) == ['*', '1', '\r', '\n', '$', '6', '\r', '\n', 'A', 'S', 'K', 'I', 'N', 'G', '\r', '\n']
+expect Command.encode(Cluster.asking()) == ['*', '1', '\r', '\n', '$', '6', '\r', '\n', 'A', 'S', 'K', 'I', 'N', 'G', '\r', '\n']
 
 expect Command.encode(Cluster.cluster_addslots(['1'], [['2']])) == ['*', '4', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '8', '\r', '\n', 'A', 'D', 'D', 'S', 'L', 'O', 'T', 'S', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n', '$', '1', '\r', '\n', '2', '\r', '\n']
 
@@ -309,7 +309,7 @@ expect Command.encode(Cluster.cluster_addslotsrange({ start_slot: ['1'], end_slo
 
 expect Command.encode(Cluster.cluster_addslotsrange({ start_slot: ['1'], end_slot: ['2'] }, [])) == ['*', '4', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '1', '3', '\r', '\n', 'A', 'D', 'D', 'S', 'L', 'O', 'T', 'S', 'R', 'A', 'N', 'G', 'E', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n', '$', '1', '\r', '\n', '2', '\r', '\n']
 
-expect Command.encode(Cluster.cluster_bumpepoch({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '9', '\r', '\n', 'B', 'U', 'M', 'P', 'E', 'P', 'O', 'C', 'H', '\r', '\n']
+expect Command.encode(Cluster.cluster_bumpepoch()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '9', '\r', '\n', 'B', 'U', 'M', 'P', 'E', 'P', 'O', 'C', 'H', '\r', '\n']
 
 expect Command.encode(Cluster.cluster_count_failure_reports([0, 1, 255])) == ['*', '3', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '2', '1', '\r', '\n', 'C', 'O', 'U', 'N', 'T', '-', 'F', 'A', 'I', 'L', 'U', 'R', 'E', '-', 'R', 'E', 'P', 'O', 'R', 'T', 'S', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
@@ -327,17 +327,17 @@ expect Command.encode(Cluster.cluster_failover([[0, 1, 255], [0, 2, 255]])) == [
 
 expect Command.encode(Cluster.cluster_failover([])) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '8', '\r', '\n', 'F', 'A', 'I', 'L', 'O', 'V', 'E', 'R', '\r', '\n']
 
-expect Command.encode(Cluster.cluster_flushslots({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '1', '0', '\r', '\n', 'F', 'L', 'U', 'S', 'H', 'S', 'L', 'O', 'T', 'S', '\r', '\n']
+expect Command.encode(Cluster.cluster_flushslots()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '1', '0', '\r', '\n', 'F', 'L', 'U', 'S', 'H', 'S', 'L', 'O', 'T', 'S', '\r', '\n']
 
 expect Command.encode(Cluster.cluster_forget([0, 1, 255])) == ['*', '3', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '6', '\r', '\n', 'F', 'O', 'R', 'G', 'E', 'T', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
 expect Command.encode(Cluster.cluster_getkeysinslot(['1'], ['2'])) == ['*', '4', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '1', '3', '\r', '\n', 'G', 'E', 'T', 'K', 'E', 'Y', 'S', 'I', 'N', 'S', 'L', 'O', 'T', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n', '$', '1', '\r', '\n', '2', '\r', '\n']
 
-expect Command.encode(Cluster.cluster_info({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '4', '\r', '\n', 'I', 'N', 'F', 'O', '\r', '\n']
+expect Command.encode(Cluster.cluster_info()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '4', '\r', '\n', 'I', 'N', 'F', 'O', '\r', '\n']
 
 expect Command.encode(Cluster.cluster_keyslot([0, 1, 255])) == ['*', '3', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '7', '\r', '\n', 'K', 'E', 'Y', 'S', 'L', 'O', 'T', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Cluster.cluster_links({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '5', '\r', '\n', 'L', 'I', 'N', 'K', 'S', '\r', '\n']
+expect Command.encode(Cluster.cluster_links()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '5', '\r', '\n', 'L', 'I', 'N', 'K', 'S', '\r', '\n']
 
 expect Command.encode(Cluster.cluster_meet([0, 1, 255], ['2'], [[0, 3, 255], [0, 4, 255]])) == ['*', '6', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '4', '\r', '\n', 'M', 'E', 'E', 'T', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '1', '\r', '\n', '2', '\r', '\n', '$', '3', '\r', '\n', 0, 3, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 4, 255, '\r', '\n']
 
@@ -347,11 +347,11 @@ expect Command.encode(Cluster.cluster_migration({ first: ['I', 'M', 'P', 'O', 'R
 
 expect Command.encode(Cluster.cluster_migration({ first: ['C', 'A', 'N', 'C', 'E', 'L'], rest: [['A', 'L', 'L']] })) == ['*', '4', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '9', '\r', '\n', 'M', 'I', 'G', 'R', 'A', 'T', 'I', 'O', 'N', '\r', '\n', '$', '6', '\r', '\n', 'C', 'A', 'N', 'C', 'E', 'L', '\r', '\n', '$', '3', '\r', '\n', 'A', 'L', 'L', '\r', '\n']
 
-expect Command.encode(Cluster.cluster_myid({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '4', '\r', '\n', 'M', 'Y', 'I', 'D', '\r', '\n']
+expect Command.encode(Cluster.cluster_myid()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '4', '\r', '\n', 'M', 'Y', 'I', 'D', '\r', '\n']
 
-expect Command.encode(Cluster.cluster_myshardid({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '9', '\r', '\n', 'M', 'Y', 'S', 'H', 'A', 'R', 'D', 'I', 'D', '\r', '\n']
+expect Command.encode(Cluster.cluster_myshardid()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '9', '\r', '\n', 'M', 'Y', 'S', 'H', 'A', 'R', 'D', 'I', 'D', '\r', '\n']
 
-expect Command.encode(Cluster.cluster_nodes({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '5', '\r', '\n', 'N', 'O', 'D', 'E', 'S', '\r', '\n']
+expect Command.encode(Cluster.cluster_nodes()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '5', '\r', '\n', 'N', 'O', 'D', 'E', 'S', '\r', '\n']
 
 expect Command.encode(Cluster.cluster_replicas([0, 1, 255])) == ['*', '3', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '8', '\r', '\n', 'R', 'E', 'P', 'L', 'I', 'C', 'A', 'S', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
@@ -361,7 +361,7 @@ expect Command.encode(Cluster.cluster_reset([[0, 1, 255], [0, 2, 255]])) == ['*'
 
 expect Command.encode(Cluster.cluster_reset([])) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '5', '\r', '\n', 'R', 'E', 'S', 'E', 'T', '\r', '\n']
 
-expect Command.encode(Cluster.cluster_saveconfig({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '1', '0', '\r', '\n', 'S', 'A', 'V', 'E', 'C', 'O', 'N', 'F', 'I', 'G', '\r', '\n']
+expect Command.encode(Cluster.cluster_saveconfig()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '1', '0', '\r', '\n', 'S', 'A', 'V', 'E', 'C', 'O', 'N', 'F', 'I', 'G', '\r', '\n']
 
 expect Command.encode(Cluster.cluster_set_config_epoch(['1'])) == ['*', '3', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '1', '6', '\r', '\n', 'S', 'E', 'T', '-', 'C', 'O', 'N', 'F', 'I', 'G', '-', 'E', 'P', 'O', 'C', 'H', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n']
 
@@ -369,7 +369,7 @@ expect Command.encode(Cluster.cluster_setslot(['1'], { first: ['I', 'M', 'P', 'O
 
 expect Command.encode(Cluster.cluster_setslot(['1'], { first: ['S', 'T', 'A', 'B', 'L', 'E'], rest: [] })) == ['*', '4', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '7', '\r', '\n', 'S', 'E', 'T', 'S', 'L', 'O', 'T', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n', '$', '6', '\r', '\n', 'S', 'T', 'A', 'B', 'L', 'E', '\r', '\n']
 
-expect Command.encode(Cluster.cluster_shards({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '6', '\r', '\n', 'S', 'H', 'A', 'R', 'D', 'S', '\r', '\n']
+expect Command.encode(Cluster.cluster_shards()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '6', '\r', '\n', 'S', 'H', 'A', 'R', 'D', 'S', '\r', '\n']
 
 expect Command.encode(Cluster.cluster_slaves([0, 1, 255])) == ['*', '3', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '6', '\r', '\n', 'S', 'L', 'A', 'V', 'E', 'S', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
@@ -377,8 +377,8 @@ expect Command.encode(Cluster.cluster_slot_stats({ first: ['S', 'L', 'O', 'T', '
 
 expect Command.encode(Cluster.cluster_slot_stats({ first: ['O', 'R', 'D', 'E', 'R', 'B', 'Y'], rest: [[0, 1, 255]] })) == ['*', '4', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '1', '0', '\r', '\n', 'S', 'L', 'O', 'T', '-', 'S', 'T', 'A', 'T', 'S', '\r', '\n', '$', '7', '\r', '\n', 'O', 'R', 'D', 'E', 'R', 'B', 'Y', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Cluster.cluster_slots({})) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '5', '\r', '\n', 'S', 'L', 'O', 'T', 'S', '\r', '\n']
+expect Command.encode(Cluster.cluster_slots()) == ['*', '2', '\r', '\n', '$', '7', '\r', '\n', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '\r', '\n', '$', '5', '\r', '\n', 'S', 'L', 'O', 'T', 'S', '\r', '\n']
 
-expect Command.encode(Cluster.readonly({})) == ['*', '1', '\r', '\n', '$', '8', '\r', '\n', 'R', 'E', 'A', 'D', 'O', 'N', 'L', 'Y', '\r', '\n']
+expect Command.encode(Cluster.readonly()) == ['*', '1', '\r', '\n', '$', '8', '\r', '\n', 'R', 'E', 'A', 'D', 'O', 'N', 'L', 'Y', '\r', '\n']
 
-expect Command.encode(Cluster.readwrite({})) == ['*', '1', '\r', '\n', '$', '9', '\r', '\n', 'R', 'E', 'A', 'D', 'W', 'R', 'I', 'T', 'E', '\r', '\n']
+expect Command.encode(Cluster.readwrite()) == ['*', '1', '\r', '\n', '$', '9', '\r', '\n', 'R', 'E', 'A', 'D', 'W', 'R', 'I', 'T', 'E', '\r', '\n']

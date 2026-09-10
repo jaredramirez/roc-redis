@@ -45,14 +45,14 @@ Session :: [].{
 	select : U64 -> Request.Request({}, Reply.Error)
 	select = |database| Request.new(Command.new("SELECT", [decimal(database)]), Reply.okay)
 
-	client_id : {} -> Request.Request(I64, Reply.Error)
-	client_id = |_| Request.new(Command.new("CLIENT", ["ID"]), Reply.integer)
+	client_id : () -> Request.Request(I64, Reply.Error)
+	client_id = || Request.new(Command.new("CLIENT", ["ID"]), Reply.integer)
 
-	client_get_redir : {} -> Request.Request(I64, Reply.Error)
-	client_get_redir = |_| Request.new(Command.new("CLIENT", ["GETREDIR"]), Reply.integer)
+	client_get_redir : () -> Request.Request(I64, Reply.Error)
+	client_get_redir = || Request.new(Command.new("CLIENT", ["GETREDIR"]), Reply.integer)
 
-	client_get_name : {} -> Request.Request(Reply.Optional(Bytes.Bytes), Reply.Error)
-	client_get_name = |_| Request.new(
+	client_get_name : () -> Request.Request(Reply.Optional(Bytes.Bytes), Reply.Error)
+	client_get_name = || Request.new(
 		Command.new("CLIENT", ["GETNAME"]),
 		|reply| Reply.bulk_or_null(reply).map_ok(
 			|value| match value {
@@ -66,8 +66,8 @@ Session :: [].{
 	client_set_name = |name| Request.new(Command.new("CLIENT", ["SETNAME", name]), Reply.okay)
 
 	## Keep the extensible, binary-safe CLIENT INFO/LIST payload intact.
-	client_info : {} -> Request.Request(Bytes.Bytes, Reply.Error)
-	client_info = |_| Request.new(Command.new("CLIENT", ["INFO"]), bulk)
+	client_info : () -> Request.Request(Bytes.Bytes, Reply.Error)
+	client_info = || Request.new(Command.new("CLIENT", ["INFO"]), bulk)
 
 	client_list : ListOptions -> Request.Request(Bytes.Bytes, Reply.Error)
 	client_list = |options| {
@@ -105,8 +105,8 @@ Session :: [].{
 		Reply.okay,
 	)
 
-	client_unpause : {} -> Request.Request({}, Reply.Error)
-	client_unpause = |_| Request.new(Command.new("CLIENT", ["UNPAUSE"]), Reply.okay)
+	client_unpause : () -> Request.Request({}, Reply.Error)
+	client_unpause = || Request.new(Command.new("CLIENT", ["UNPAUSE"]), Reply.okay)
 
 	client_unblock : U64, [Timeout, Error] -> Request.Request(Bool, Reply.Error)
 	client_unblock = |id, mode| Request.new(
@@ -143,17 +143,17 @@ Session :: [].{
 
 	## Structured tracking metadata can evolve by Redis version. Preserve its
 	## RESP2 alternating key/value array for caller-selected custom decoding.
-	client_tracking_info : {} -> Request.Request(List(Resp.Resp), Reply.Error)
-	client_tracking_info = |_| Request.new(Command.new("CLIENT", ["TRACKINGINFO"]), Reply.array)
+	client_tracking_info : () -> Request.Request(List(Resp.Resp), Reply.Error)
+	client_tracking_info = || Request.new(Command.new("CLIENT", ["TRACKINGINFO"]), Reply.array)
 
 	## Encoding-only: these operations can change protocol/mode or close the
 	## connection. They deliberately do not produce Request values. A platform
 	## adapter implementing the appropriate lifecycle may use their wire bytes.
-	quit : {} -> Command.Command
-	quit = |_| Command.new("QUIT", [])
+	quit : () -> Command.Command
+	quit = || Command.new("QUIT", [])
 
-	reset : {} -> Command.Command
-	reset = |_| Command.new("RESET", [])
+	reset : () -> Command.Command
+	reset = || Command.new("RESET", [])
 
 	client_reply : [On, Off, Skip] -> Command.Command
 	client_reply = |mode| Command.new(
@@ -268,8 +268,8 @@ bulk = |reply| Reply.bulk(reply).map_ok(Bytes.from_list)
 expect Session.auth(User({ username: "user", password: "secret" })).command() == Command.new("AUTH", ["user", "secret"])
 expect Session.ping().decode(Resp.simple_utf8("PONG")) == Ok(Bytes.from_str("PONG"))
 expect Session.echo(Bytes.from_list([0, 255])).decode(Resp.BulkString([0, 255])) == Ok(Bytes.from_list([0, 255]))
-expect Session.client_get_name({}).decode(Resp.NullBulkString) == Ok(Absent)
-expect Session.client_get_name({}).decode(Resp.NullArray).is_err()
+expect Session.client_get_name().decode(Resp.NullBulkString) == Ok(Absent)
+expect Session.client_get_name().decode(Resp.NullArray).is_err()
 expect Session.client_list(Session.ListOptions.{ kind: Present(Replica), ids: [42, 43] }).command() == Command.new("CLIENT", ["LIST", "TYPE", "REPLICA", "ID", "42", "43"])
 expect Session.client_reply(Skip) == Command.new("CLIENT", ["REPLY", "SKIP"])
 expect Session.client_tracking(On(Session.TrackingOptions.{ mode: Broadcast(["prefix"]), no_loop: True })) == Command.new("CLIENT", ["TRACKING", "ON", "BCAST", "PREFIX", "prefix", "NOLOOP"])

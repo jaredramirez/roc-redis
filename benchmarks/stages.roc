@@ -78,12 +78,12 @@ run! = |stage, iterations, fixtures, plans| {
 					return Err(StageFailed("wrong encoding"))
 				}
 			}
-			"decode_pipeline" => match Decoder.feed(Decoder.init({}), f.wire) {
+			"decode_pipeline" => match Decoder.feed(Decoder.init(), f.wire) {
 				Progress({ decoder, values }) if values == f.responses and Decoder.finish(decoder).is_ok() => {}
 				_ => return Err(StageFailed("wrong decoding"))
 			}
 			"decode_fragmented" => {
-				var $decoder = Decoder.init({})
+				var $decoder = Decoder.init()
 				var $values = []
 				var $offset = 0.U64
 				while $offset < f.wire.len() {

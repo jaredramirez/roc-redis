@@ -110,7 +110,7 @@ run = |fixtures, chunk, iterations| {
 	var $iteration = 0.U64
 	while $iteration < iterations {
 		f = fixtures.get($iteration % 2) ? |_| "fixture index"
-		var $decoder = Decoder.init({})
+		var $decoder = Decoder.init()
 		var $values = List.with_capacity(f.values.len())
 		var $offset = 0.U64
 		while $offset < f.wire.len() {

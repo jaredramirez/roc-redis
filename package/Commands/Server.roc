@@ -141,8 +141,8 @@ Server :: [].{
 		),
 	)
 
-	latency_latest : {} -> Request.Request(List(LatencyEvent), Reply.Error)
-	latency_latest = |_| Request.new(
+	latency_latest : () -> Request.Request(List(LatencyEvent), Reply.Error)
+	latency_latest = || Request.new(
 		Command.new("LATENCY", ["LATEST"]),
 		|reply| Decode.list(
 			reply,
@@ -153,8 +153,8 @@ Server :: [].{
 		),
 	)
 
-	time : {} -> Request.Request({ seconds : U64, microseconds : U64 }, Reply.Error)
-	time = |_| Request.new(
+	time : () -> Request.Request({ seconds : U64, microseconds : U64 }, Reply.Error)
+	time = || Request.new(
 		Command.new("TIME", []),
 		|reply| match reply {
 			Array([seconds, microseconds]) => {
@@ -179,8 +179,8 @@ Server :: [].{
 
 	## MONITOR begins an unbounded feed. Use a dedicated streaming adapter,
 	## never Execute.request! or Execute.no_reply! on an ordinary connection.
-	monitor : {} -> Command.Command
-	monitor = |_| Command.new("MONITOR", [])
+	monitor : () -> Command.Command
+	monitor = || Command.new("MONITOR", [])
 
 	## Successful shutdown closes the connection without a reply; errors still
 	## reply. A dedicated shutdown adapter must distinguish these outcomes.
@@ -211,8 +211,8 @@ Server :: [].{
 	)
 
 	## Unlike successful shutdown, ABORT has a normal acknowledgement.
-	shutdown_abort : {} -> Request.Request({}, Reply.Error)
-	shutdown_abort = |_| Request.new(Command.new("SHUTDOWN", ["ABORT"]), Reply.okay)
+	shutdown_abort : () -> Request.Request({}, Reply.Error)
+	shutdown_abort = || Request.new(Command.new("SHUTDOWN", ["ABORT"]), Reply.okay)
 
 	acl_cat : Reply.Optional(Bytes.Bytes) -> Request.Request(List(Bytes.Bytes), Reply.Error)
 	acl_cat = |category| Request.new(Command.new("ACL", ["CAT"].concat(optional_bytes(category))), Decode.bytes_list)
@@ -223,38 +223,38 @@ Server :: [].{
 	acl_gen_pass : Reply.Optional(U64) -> Request.Request(Bytes.Bytes, Reply.Error)
 	acl_gen_pass = |bits| Request.new(Command.new("ACL", ["GENPASS"].concat(optional_count(bits))), Decode.bytes)
 
-	acl_list : {} -> Request.Request(List(Bytes.Bytes), Reply.Error)
-	acl_list = |_| Request.new(Command.new("ACL", ["LIST"]), Decode.bytes_list)
+	acl_list : () -> Request.Request(List(Bytes.Bytes), Reply.Error)
+	acl_list = || Request.new(Command.new("ACL", ["LIST"]), Decode.bytes_list)
 
-	acl_load : {} -> Request.Request({}, Reply.Error)
-	acl_load = |_| Request.new(Command.new("ACL", ["LOAD"]), Reply.okay)
+	acl_load : () -> Request.Request({}, Reply.Error)
+	acl_load = || Request.new(Command.new("ACL", ["LOAD"]), Reply.okay)
 
-	acl_save : {} -> Request.Request({}, Reply.Error)
-	acl_save = |_| Request.new(Command.new("ACL", ["SAVE"]), Reply.okay)
+	acl_save : () -> Request.Request({}, Reply.Error)
+	acl_save = || Request.new(Command.new("ACL", ["SAVE"]), Reply.okay)
 
 	acl_set_user : Bytes.Bytes, List(Bytes.Bytes) -> Request.Request({}, Reply.Error)
 	acl_set_user = |username, rules| Request.new(Command.new("ACL", ["SETUSER", username].concat(rules)), Reply.okay)
 
-	acl_users : {} -> Request.Request(List(Bytes.Bytes), Reply.Error)
-	acl_users = |_| Request.new(Command.new("ACL", ["USERS"]), Decode.bytes_list)
+	acl_users : () -> Request.Request(List(Bytes.Bytes), Reply.Error)
+	acl_users = || Request.new(Command.new("ACL", ["USERS"]), Decode.bytes_list)
 
-	acl_who_am_i : {} -> Request.Request(Bytes.Bytes, Reply.Error)
-	acl_who_am_i = |_| Request.new(Command.new("ACL", ["WHOAMI"]), Decode.bytes)
+	acl_who_am_i : () -> Request.Request(Bytes.Bytes, Reply.Error)
+	acl_who_am_i = || Request.new(Command.new("ACL", ["WHOAMI"]), Decode.bytes)
 
-	backup_abort : {} -> Request.Request({}, Reply.Error)
-	backup_abort = |_| Request.new(Command.new("BACKUP", ["ABORT"]), Reply.okay)
+	backup_abort : () -> Request.Request({}, Reply.Error)
+	backup_abort = || Request.new(Command.new("BACKUP", ["ABORT"]), Reply.okay)
 
-	backup_cleanup : {} -> Request.Request({}, Reply.Error)
-	backup_cleanup = |_| Request.new(Command.new("BACKUP", ["CLEANUP"]), Reply.okay)
+	backup_cleanup : () -> Request.Request({}, Reply.Error)
+	backup_cleanup = || Request.new(Command.new("BACKUP", ["CLEANUP"]), Reply.okay)
 
-	backup_seal : {} -> Request.Request({}, Reply.Error)
-	backup_seal = |_| Request.new(Command.new("BACKUP", ["SEAL"]), Reply.okay)
+	backup_seal : () -> Request.Request({}, Reply.Error)
+	backup_seal = || Request.new(Command.new("BACKUP", ["SEAL"]), Reply.okay)
 
-	backup_start : {} -> Request.Request({}, Reply.Error)
-	backup_start = |_| Request.new(Command.new("BACKUP", ["START"]), Reply.okay)
+	backup_start : () -> Request.Request({}, Reply.Error)
+	backup_start = || Request.new(Command.new("BACKUP", ["START"]), Reply.okay)
 
-	bgrewrite_aof : {} -> Request.Request(Bytes.Bytes, Reply.Error)
-	bgrewrite_aof = |_| Request.new(Command.new("BGREWRITEAOF", []), simple_bytes)
+	bgrewrite_aof : () -> Request.Request(Bytes.Bytes, Reply.Error)
+	bgrewrite_aof = || Request.new(Command.new("BGREWRITEAOF", []), simple_bytes)
 
 	bgsave : Bool -> Request.Request(Bytes.Bytes, Reply.Error)
 	bgsave = |schedule| Request.new(
@@ -269,20 +269,20 @@ Server :: [].{
 		simple_bytes,
 	)
 
-	command_count : {} -> Request.Request(I64, Reply.Error)
-	command_count = |_| Request.new(Command.new("COMMAND", ["COUNT"]), Reply.integer)
+	command_count : () -> Request.Request(I64, Reply.Error)
+	command_count = || Request.new(Command.new("COMMAND", ["COUNT"]), Reply.integer)
 
 	command_get_keys : Command.Command -> Request.Request(List(Bytes.Bytes), Reply.Error)
 	command_get_keys = |command| Request.new(Command.new("COMMAND", ["GETKEYS"].concat(command.to_parts().map(Bytes.from_list))), Decode.bytes_list)
 
-	config_reset_stat : {} -> Request.Request({}, Reply.Error)
-	config_reset_stat = |_| Request.new(Command.new("CONFIG", ["RESETSTAT"]), Reply.okay)
+	config_reset_stat : () -> Request.Request({}, Reply.Error)
+	config_reset_stat = || Request.new(Command.new("CONFIG", ["RESETSTAT"]), Reply.okay)
 
-	config_rewrite : {} -> Request.Request({}, Reply.Error)
-	config_rewrite = |_| Request.new(Command.new("CONFIG", ["REWRITE"]), Reply.okay)
+	config_rewrite : () -> Request.Request({}, Reply.Error)
+	config_rewrite = || Request.new(Command.new("CONFIG", ["REWRITE"]), Reply.okay)
 
-	dbsize : {} -> Request.Request(I64, Reply.Error)
-	dbsize = |_| Request.new(Command.new("DBSIZE", []), Reply.integer)
+	dbsize : () -> Request.Request(I64, Reply.Error)
+	dbsize = || Request.new(Command.new("DBSIZE", []), Reply.integer)
 
 	flush_all : FlushMode -> Request.Request({}, Reply.Error)
 	flush_all = |mode| Request.new(Command.new("FLUSHALL", flush_args(mode)), Reply.okay)
@@ -290,20 +290,20 @@ Server :: [].{
 	flush_db : FlushMode -> Request.Request({}, Reply.Error)
 	flush_db = |mode| Request.new(Command.new("FLUSHDB", flush_args(mode)), Reply.okay)
 
-	hotkeys_reset : {} -> Request.Request({}, Reply.Error)
-	hotkeys_reset = |_| Request.new(Command.new("HOTKEYS", ["RESET"]), Reply.okay)
+	hotkeys_reset : () -> Request.Request({}, Reply.Error)
+	hotkeys_reset = || Request.new(Command.new("HOTKEYS", ["RESET"]), Reply.okay)
 
-	hotkeys_stop : {} -> Request.Request({}, Reply.Error)
-	hotkeys_stop = |_| Request.new(Command.new("HOTKEYS", ["STOP"]), Reply.okay)
+	hotkeys_stop : () -> Request.Request({}, Reply.Error)
+	hotkeys_stop = || Request.new(Command.new("HOTKEYS", ["STOP"]), Reply.okay)
 
 	info : List(Bytes.Bytes) -> Request.Request(Bytes.Bytes, Reply.Error)
 	info = |sections| Request.new(Command.new("INFO", sections), Decode.bytes)
 
-	last_save : {} -> Request.Request(I64, Reply.Error)
-	last_save = |_| Request.new(Command.new("LASTSAVE", []), Reply.integer)
+	last_save : () -> Request.Request(I64, Reply.Error)
+	last_save = || Request.new(Command.new("LASTSAVE", []), Reply.integer)
 
-	latency_doctor : {} -> Request.Request(Bytes.Bytes, Reply.Error)
-	latency_doctor = |_| Request.new(Command.new("LATENCY", ["DOCTOR"]), Decode.bytes)
+	latency_doctor : () -> Request.Request(Bytes.Bytes, Reply.Error)
+	latency_doctor = || Request.new(Command.new("LATENCY", ["DOCTOR"]), Decode.bytes)
 
 	latency_graph : Bytes.Bytes -> Request.Request(Bytes.Bytes, Reply.Error)
 	latency_graph = |event| Request.new(Command.new("LATENCY", ["GRAPH", event]), Decode.bytes)
@@ -314,14 +314,14 @@ Server :: [].{
 	lolwut : Reply.Optional(U64) -> Request.Request(Bytes.Bytes, Reply.Error)
 	lolwut = |version| Request.new(Command.new("LOLWUT", number_option("VERSION", version)), Decode.bytes)
 
-	memory_doctor : {} -> Request.Request(Bytes.Bytes, Reply.Error)
-	memory_doctor = |_| Request.new(Command.new("MEMORY", ["DOCTOR"]), Decode.bytes)
+	memory_doctor : () -> Request.Request(Bytes.Bytes, Reply.Error)
+	memory_doctor = || Request.new(Command.new("MEMORY", ["DOCTOR"]), Decode.bytes)
 
-	memory_malloc_stats : {} -> Request.Request(Bytes.Bytes, Reply.Error)
-	memory_malloc_stats = |_| Request.new(Command.new("MEMORY", ["MALLOC-STATS"]), Decode.bytes)
+	memory_malloc_stats : () -> Request.Request(Bytes.Bytes, Reply.Error)
+	memory_malloc_stats = || Request.new(Command.new("MEMORY", ["MALLOC-STATS"]), Decode.bytes)
 
-	memory_purge : {} -> Request.Request({}, Reply.Error)
-	memory_purge = |_| Request.new(Command.new("MEMORY", ["PURGE"]), Reply.okay)
+	memory_purge : () -> Request.Request({}, Reply.Error)
+	memory_purge = || Request.new(Command.new("MEMORY", ["PURGE"]), Reply.okay)
 
 	module_load : Bytes.Bytes, List(Bytes.Bytes) -> Request.Request({}, Reply.Error)
 	module_load = |path, args| Request.new(Command.new("MODULE", ["LOAD", path].concat(args)), Reply.okay)
@@ -335,14 +335,14 @@ Server :: [].{
 	slave_of : Replica -> Request.Request({}, Reply.Error)
 	slave_of = |replica| Request.new(Command.new("SLAVEOF", replica_args(replica)), Reply.okay)
 
-	save : {} -> Request.Request({}, Reply.Error)
-	save = |_| Request.new(Command.new("SAVE", []), Reply.okay)
+	save : () -> Request.Request({}, Reply.Error)
+	save = || Request.new(Command.new("SAVE", []), Reply.okay)
 
-	slowlog_len : {} -> Request.Request(I64, Reply.Error)
-	slowlog_len = |_| Request.new(Command.new("SLOWLOG", ["LEN"]), Reply.integer)
+	slowlog_len : () -> Request.Request(I64, Reply.Error)
+	slowlog_len = || Request.new(Command.new("SLOWLOG", ["LEN"]), Reply.integer)
 
-	slowlog_reset : {} -> Request.Request({}, Reply.Error)
-	slowlog_reset = |_| Request.new(Command.new("SLOWLOG", ["RESET"]), Reply.okay)
+	slowlog_reset : () -> Request.Request({}, Reply.Error)
+	slowlog_reset = || Request.new(Command.new("SLOWLOG", ["RESET"]), Reply.okay)
 
 	swap_db : U64, U64 -> Request.Request({}, Reply.Error)
 	swap_db = |first, second| Request.new(Command.new("SWAPDB", [decimal(first), decimal(second)]), Reply.okay)
@@ -489,11 +489,11 @@ expect Server.hotkeys_start(Both, { count: Present(10), slots: [1, 2] }).command
 expect Server.module_load_ex("module.so", [{ name: "a", value: "b" }, { name: "c", value: "d" }], ["x"]).command() == Command.new("MODULE", ["LOADEX", "module.so", "CONFIG", "a", "b", "CONFIG", "c", "d", "ARGS", "x"])
 expect Server.acl_log(Reset).decode(Resp.simple_utf8("OK")) == Ok(Reset)
 expect Server.acl_log(Get(Absent)).decode(Resp.Array([])) == Ok(Entries([]))
-expect Server.time({}).decode(Resp.Array([Resp.bulk_utf8("123"), Resp.bulk_utf8("456")])) == Ok({ seconds: 123, microseconds: 456 })
-expect Server.time({}).decode(Resp.Array([Resp.bulk_utf8("123"), Resp.bulk_utf8("1000000")])).is_err()
+expect Server.time().decode(Resp.Array([Resp.bulk_utf8("123"), Resp.bulk_utf8("456")])) == Ok({ seconds: 123, microseconds: 456 })
+expect Server.time().decode(Resp.Array([Resp.bulk_utf8("123"), Resp.bulk_utf8("1000000")])).is_err()
 expect Server.memory_usage("missing", Absent).decode(Resp.NullBulkString) == Ok(Absent)
 expect Server.memory_usage("missing", Absent).decode(Resp.NullArray).is_err()
 expect Server.shutdown(Stop({ persistence: NoSave, now: True, force: False })) == Command.new("SHUTDOWN", ["NOSAVE", "NOW"])
-expect Server.monitor({}) == Command.new("MONITOR", [])
+expect Server.monitor() == Command.new("MONITOR", [])
 expect Server.replica_of(Independent).command() == Command.new("REPLICAOF", ["NO", "ONE"])
 expect Server.trim_slots(NonEmpty.new({ start: 1, end: 2 }, [{ start: 4, end: 5 }])).command() == Command.new("TRIMSLOTS", ["RANGES", "2", "1", "2", "4", "5"])

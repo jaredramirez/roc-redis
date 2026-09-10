@@ -78,8 +78,8 @@ Scripting := {}.{
 	## Construct `FUNCTION DUMP`.
 	## Available since Redis 7.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/function-dump/).
-	function_dump : {} -> Command.Command
-	function_dump = |_| {
+	function_dump : () -> Command.Command
+	function_dump = || {
 		Command.from_nonempty_bytes("FUNCTION", [['D', 'U', 'M', 'P']])
 	}
 
@@ -96,8 +96,8 @@ Scripting := {}.{
 	## Construct `FUNCTION KILL`.
 	## Available since Redis 7.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/function-kill/).
-	function_kill : {} -> Command.Command
-	function_kill = |_| {
+	function_kill : () -> Command.Command
+	function_kill = || {
 		Command.from_nonempty_bytes("FUNCTION", [['K', 'I', 'L', 'L']])
 	}
 
@@ -134,8 +134,8 @@ Scripting := {}.{
 	## Construct `FUNCTION STATS`.
 	## Available since Redis 7.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/function-stats/).
-	function_stats : {} -> Command.Command
-	function_stats = |_| {
+	function_stats : () -> Command.Command
+	function_stats = || {
 		Command.from_nonempty_bytes("FUNCTION", [['S', 'T', 'A', 'T', 'S']])
 	}
 
@@ -171,8 +171,8 @@ Scripting := {}.{
 	## Construct `SCRIPT KILL`.
 	## Available since Redis 2.6.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/script-kill/).
-	script_kill : {} -> Command.Command
-	script_kill = |_| {
+	script_kill : () -> Command.Command
+	script_kill = || {
 		Command.from_nonempty_bytes("SCRIPT", [['K', 'I', 'L', 'L']])
 	}
 
@@ -212,13 +212,13 @@ expect Command.encode(Scripting.fcall_ro([0, 1, 255], [], [])) == ['*', '3', '\r
 
 expect Command.encode(Scripting.function_delete([0, 1, 255])) == ['*', '3', '\r', '\n', '$', '8', '\r', '\n', 'F', 'U', 'N', 'C', 'T', 'I', 'O', 'N', '\r', '\n', '$', '6', '\r', '\n', 'D', 'E', 'L', 'E', 'T', 'E', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Scripting.function_dump({})) == ['*', '2', '\r', '\n', '$', '8', '\r', '\n', 'F', 'U', 'N', 'C', 'T', 'I', 'O', 'N', '\r', '\n', '$', '4', '\r', '\n', 'D', 'U', 'M', 'P', '\r', '\n']
+expect Command.encode(Scripting.function_dump()) == ['*', '2', '\r', '\n', '$', '8', '\r', '\n', 'F', 'U', 'N', 'C', 'T', 'I', 'O', 'N', '\r', '\n', '$', '4', '\r', '\n', 'D', 'U', 'M', 'P', '\r', '\n']
 
 expect Command.encode(Scripting.function_flush([[0, 1, 255], [0, 2, 255]])) == ['*', '4', '\r', '\n', '$', '8', '\r', '\n', 'F', 'U', 'N', 'C', 'T', 'I', 'O', 'N', '\r', '\n', '$', '5', '\r', '\n', 'F', 'L', 'U', 'S', 'H', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 
 expect Command.encode(Scripting.function_flush([])) == ['*', '2', '\r', '\n', '$', '8', '\r', '\n', 'F', 'U', 'N', 'C', 'T', 'I', 'O', 'N', '\r', '\n', '$', '5', '\r', '\n', 'F', 'L', 'U', 'S', 'H', '\r', '\n']
 
-expect Command.encode(Scripting.function_kill({})) == ['*', '2', '\r', '\n', '$', '8', '\r', '\n', 'F', 'U', 'N', 'C', 'T', 'I', 'O', 'N', '\r', '\n', '$', '4', '\r', '\n', 'K', 'I', 'L', 'L', '\r', '\n']
+expect Command.encode(Scripting.function_kill()) == ['*', '2', '\r', '\n', '$', '8', '\r', '\n', 'F', 'U', 'N', 'C', 'T', 'I', 'O', 'N', '\r', '\n', '$', '4', '\r', '\n', 'K', 'I', 'L', 'L', '\r', '\n']
 
 expect Command.encode(Scripting.function_list([[0, 1, 255], [0, 2, 255]])) == ['*', '4', '\r', '\n', '$', '8', '\r', '\n', 'F', 'U', 'N', 'C', 'T', 'I', 'O', 'N', '\r', '\n', '$', '4', '\r', '\n', 'L', 'I', 'S', 'T', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 
@@ -232,7 +232,7 @@ expect Command.encode(Scripting.function_restore([0, 1, 255], [[0, 2, 255], [0, 
 
 expect Command.encode(Scripting.function_restore([0, 1, 255], [])) == ['*', '3', '\r', '\n', '$', '8', '\r', '\n', 'F', 'U', 'N', 'C', 'T', 'I', 'O', 'N', '\r', '\n', '$', '7', '\r', '\n', 'R', 'E', 'S', 'T', 'O', 'R', 'E', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Scripting.function_stats({})) == ['*', '2', '\r', '\n', '$', '8', '\r', '\n', 'F', 'U', 'N', 'C', 'T', 'I', 'O', 'N', '\r', '\n', '$', '5', '\r', '\n', 'S', 'T', 'A', 'T', 'S', '\r', '\n']
+expect Command.encode(Scripting.function_stats()) == ['*', '2', '\r', '\n', '$', '8', '\r', '\n', 'F', 'U', 'N', 'C', 'T', 'I', 'O', 'N', '\r', '\n', '$', '5', '\r', '\n', 'S', 'T', 'A', 'T', 'S', '\r', '\n']
 
 expect Command.encode(Scripting.script_debug(['Y', 'E', 'S'])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'S', 'C', 'R', 'I', 'P', 'T', '\r', '\n', '$', '5', '\r', '\n', 'D', 'E', 'B', 'U', 'G', '\r', '\n', '$', '3', '\r', '\n', 'Y', 'E', 'S', '\r', '\n']
 
@@ -244,6 +244,6 @@ expect Command.encode(Scripting.script_flush([[0, 1, 255], [0, 2, 255]])) == ['*
 
 expect Command.encode(Scripting.script_flush([])) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'S', 'C', 'R', 'I', 'P', 'T', '\r', '\n', '$', '5', '\r', '\n', 'F', 'L', 'U', 'S', 'H', '\r', '\n']
 
-expect Command.encode(Scripting.script_kill({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'S', 'C', 'R', 'I', 'P', 'T', '\r', '\n', '$', '4', '\r', '\n', 'K', 'I', 'L', 'L', '\r', '\n']
+expect Command.encode(Scripting.script_kill()) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'S', 'C', 'R', 'I', 'P', 'T', '\r', '\n', '$', '4', '\r', '\n', 'K', 'I', 'L', 'L', '\r', '\n']
 
 expect Command.encode(Scripting.script_load([0, 1, 255])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'S', 'C', 'R', 'I', 'P', 'T', '\r', '\n', '$', '4', '\r', '\n', 'L', 'O', 'A', 'D', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']

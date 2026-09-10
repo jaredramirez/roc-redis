@@ -53,7 +53,7 @@ main! = |args| {
 	})
 	connection = client.connect!(transport) ? |error| client_failure("handshake", error)
 
-	ping_result = connection.request!(Request.new(Command.ping({}), Reply.simple)) ? |error| client_failure("PING", error)
+	ping_result = connection.request!(Request.new(Command.ping(), Reply.simple)) ? |error| client_failure("PING", error)
 	if ping_result != "PONG".to_utf8() {
 		return Err(IntegrationFailed("PING did not return PONG"))
 	}
@@ -70,7 +70,7 @@ main! = |args| {
 	get_result = connection.request!(TypedCommands.Strings.get(Bytes.from_list(test_key))) ? |error| client_failure("GET", error)
 
 	echo_command = Command.echo(test_value)
-	pipeline_result = connection.batch!(Batch.each([Request.new(Command.ping({}), Reply.simple), Request.new(echo_command, Reply.bulk)])) ? |error| client_failure("pipeline", error)
+	pipeline_result = connection.batch!(Batch.each([Request.new(Command.ping(), Reply.simple), Request.new(echo_command, Reply.bulk)])) ? |error| client_failure("pipeline", error)
 
 	TypedCases.run!(Bytes.from_list(test_key), config, transport) ? |message| IntegrationFailed(message)
 	del_result = connection.request!(TypedCommands.Keyspace.del(NonEmpty.new(Bytes.from_list(test_key), []))) ? |error| client_failure("DEL", error)

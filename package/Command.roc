@@ -43,8 +43,8 @@ Command :: { parts : List(List(U8)) }.{
 		Command.from_bytes(name.to_utf8(), arguments.map(Str.to_utf8))
 
 	## Construct `PING`.
-	ping : {} -> Command
-	ping = |_| Command.from_nonempty_bytes("PING", [])
+	ping : () -> Command
+	ping = || Command.from_nonempty_bytes("PING", [])
 
 	## Construct `PING message`, preserving arbitrary message bytes.
 	ping_with_message : List(U8) -> Command
@@ -200,21 +200,21 @@ expect {
 
 ## A pipeline has no separator beyond each command's own RESP framing.
 expect {
-	ping = Command.ping({})
+	ping = Command.ping()
 	echo = Command.from_utf8("ECHO", ["hi"])?
 	Command.encode_pipeline([ping, echo]) == Command.encode(ping).concat(Command.encode(echo))
 }
 
 expect Command.encode_pipeline([]).is_empty()
 
-expect Command.encode_bounded([Command.ping({})], 14) == Ok(Command.encode(Command.ping({})))
+expect Command.encode_bounded([Command.ping()], 14) == Ok(Command.encode(Command.ping()))
 
-expect Command.encode_bounded([Command.ping({})], 13) == Err(RequestByteLimitExceeded({ limit: 13 }))
+expect Command.encode_bounded([Command.ping()], 13) == Err(RequestByteLimitExceeded({ limit: 13 }))
 
 expect Command.encode_bounded([], 0) == Ok([])
 
 expect {
-	commands = [Command.ping({}), Command.echo([0, 255, '\r', '\n']), Command.echo([])]
+	commands = [Command.ping(), Command.echo([0, 255, '\r', '\n']), Command.echo([])]
 	expected = Command.encode_pipeline(commands)
 	Command.pipeline_size(commands, expected.len()) == Ok(expected.len()) and Command.encode_bounded(commands, expected.len()) == Ok(expected)
 }

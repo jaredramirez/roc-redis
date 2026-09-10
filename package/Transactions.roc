@@ -17,32 +17,32 @@ Transactions := {}.{
 	## Construct `DISCARD`.
 	## Available since Redis 2.0.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/discard/).
-	discard : {} -> Command.Command
-	discard = |_| {
+	discard : () -> Command.Command
+	discard = || {
 		Command.from_nonempty_bytes("DISCARD", [])
 	}
 
 	## Construct `EXEC`.
 	## Available since Redis 1.2.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/exec/).
-	exec : {} -> Command.Command
-	exec = |_| {
+	exec : () -> Command.Command
+	exec = || {
 		Command.from_nonempty_bytes("EXEC", [])
 	}
 
 	## Construct `MULTI`.
 	## Available since Redis 1.2.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/multi/).
-	multi : {} -> Command.Command
-	multi = |_| {
+	multi : () -> Command.Command
+	multi = || {
 		Command.from_nonempty_bytes("MULTI", [])
 	}
 
 	## Construct `UNWATCH`.
 	## Available since Redis 2.2.0.
 	## [Official Redis command documentation](https://redis.io/docs/latest/commands/unwatch/).
-	unwatch : {} -> Command.Command
-	unwatch = |_| {
+	unwatch : () -> Command.Command
+	unwatch = || {
 		Command.from_nonempty_bytes("UNWATCH", [])
 	}
 
@@ -57,13 +57,13 @@ Transactions := {}.{
 	}
 }
 
-expect Command.encode(Transactions.discard({})) == ['*', '1', '\r', '\n', '$', '7', '\r', '\n', 'D', 'I', 'S', 'C', 'A', 'R', 'D', '\r', '\n']
+expect Command.encode(Transactions.discard()) == ['*', '1', '\r', '\n', '$', '7', '\r', '\n', 'D', 'I', 'S', 'C', 'A', 'R', 'D', '\r', '\n']
 
-expect Command.encode(Transactions.exec({})) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'E', 'X', 'E', 'C', '\r', '\n']
+expect Command.encode(Transactions.exec()) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'E', 'X', 'E', 'C', '\r', '\n']
 
-expect Command.encode(Transactions.multi({})) == ['*', '1', '\r', '\n', '$', '5', '\r', '\n', 'M', 'U', 'L', 'T', 'I', '\r', '\n']
+expect Command.encode(Transactions.multi()) == ['*', '1', '\r', '\n', '$', '5', '\r', '\n', 'M', 'U', 'L', 'T', 'I', '\r', '\n']
 
-expect Command.encode(Transactions.unwatch({})) == ['*', '1', '\r', '\n', '$', '7', '\r', '\n', 'U', 'N', 'W', 'A', 'T', 'C', 'H', '\r', '\n']
+expect Command.encode(Transactions.unwatch()) == ['*', '1', '\r', '\n', '$', '7', '\r', '\n', 'U', 'N', 'W', 'A', 'T', 'C', 'H', '\r', '\n']
 
 expect Command.encode(Transactions.watch([0, 1, 255], [[0, 2, 255]])) == ['*', '3', '\r', '\n', '$', '5', '\r', '\n', 'W', 'A', 'T', 'C', 'H', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 

@@ -42,8 +42,8 @@ Keyspace :: [].{
 	persist : Bytes.Bytes -> Request.Request(Bool, Reply.Error)
 	persist = |key| Request.new(Command.new("PERSIST", [key]), Reply.integer_boolean)
 
-	random_key : {} -> Request.Request(Reply.Optional(Bytes.Bytes), Reply.Error)
-	random_key = |_| Request.new(Command.new("RANDOMKEY", []), Decode.optional_bytes)
+	random_key : () -> Request.Request(Reply.Optional(Bytes.Bytes), Reply.Error)
+	random_key = || Request.new(Command.new("RANDOMKEY", []), Decode.optional_bytes)
 
 	rename : Bytes.Bytes, Bytes.Bytes -> Request.Request({}, Reply.Error)
 	rename = |key, replacement| Request.new(Command.new("RENAME", [key, replacement]), Reply.okay)

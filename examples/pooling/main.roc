@@ -47,7 +47,7 @@ exercise! = |pool| {
 		2_000,
 		|stream| {
 			conn = connection(stream)
-			id = conn.request!(Commands.Session.client_id({})) ? |_| Failed
+			id = conn.request!(Commands.Session.client_id()) ? |_| Failed
 			Ok(Reuse({ id, stale: stream }))
 		},
 	) ? |_| Failed
@@ -56,7 +56,7 @@ exercise! = |pool| {
 		2_000,
 		|stream| {
 			conn = connection(stream)
-			id = conn.request!(Commands.Session.client_id({})) ? |_| Failed
+			id = conn.request!(Commands.Session.client_id()) ? |_| Failed
 			if id != first.id {
 				return Err(Failed)
 			}
@@ -83,7 +83,7 @@ exercise! = |pool| {
 	third = pool.with_connection!(
 		2_000,
 		|stream| {
-			id = connection(stream).request!(Commands.Session.client_id({})) ? |_| Failed
+			id = connection(stream).request!(Commands.Session.client_id()) ? |_| Failed
 			if id == second {
 				return Err(Failed)
 			}
@@ -101,7 +101,7 @@ exercise! = |pool| {
 	fourth = pool.with_connection!(
 		2_000,
 		|stream| {
-			id = connection(stream).request!(Commands.Session.client_id({})) ? |_| Failed
+			id = connection(stream).request!(Commands.Session.client_id()) ? |_| Failed
 			if id == third {
 				return Err(Failed)
 			}
@@ -118,7 +118,7 @@ exercise! = |pool| {
 	pool.with_connection!(
 		2_000,
 		|stream| {
-			id = connection(stream).request!(Commands.Session.client_id({})) ? |_| Failed
+			id = connection(stream).request!(Commands.Session.client_id()) ? |_| Failed
 			if id == fourth {
 				return Err(Failed)
 			}
@@ -133,7 +133,7 @@ exercise! = |pool| {
 		2_000,
 		|stream| {
 			conn = connection(stream)
-			before = conn.request!(Commands.Session.client_id({})) ? |_| Failed
+			before = conn.request!(Commands.Session.client_id()) ? |_| Failed
 			match conn.request!(Commands.Session.select(9_999)) {
 				Ok(_) => Err(Failed)
 				Err(error) => match Execute.disposition(error) {
@@ -148,7 +148,7 @@ exercise! = |pool| {
 	pool.with_connection!(
 		2_000,
 		|stream| {
-			id = connection(stream).request!(Commands.Session.client_id({})) ? |_| Failed
+			id = connection(stream).request!(Commands.Session.client_id()) ? |_| Failed
 			if id != recovered {
 				return Err(Failed)
 			}

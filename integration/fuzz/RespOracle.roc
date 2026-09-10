@@ -25,10 +25,10 @@ RespOracle :: [].{
 	observe = |wire| observe_chunks(wire, [])
 
 	observe_chunks : List(U8), List(U8) -> Observed
-	observe_chunks = |wire, sizes| feed_scheduled(Decoder.init({}), wire, 0, sizes, [])
+	observe_chunks = |wire, sizes| feed_scheduled(Decoder.init(), wire, 0, sizes, [])
 
 	observe_single_bytes : List(U8) -> Observed
-	observe_single_bytes = |wire| feed_single(Decoder.init({}), wire, 0, [])
+	observe_single_bytes = |wire| feed_single(Decoder.init(), wire, 0, [])
 
 	## Compare protocol acceptance and completed top-level prefixes. The reference
 	## intentionally does not duplicate Decoder's library-specific error taxonomy.

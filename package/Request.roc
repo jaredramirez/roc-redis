@@ -34,16 +34,16 @@ Request(value, decode_err) :: {
 }
 
 expect {
-	request = Request.new(Command.ping({}), |_reply| Err(ApplicationError))
+	request = Request.new(Command.ping(), |_reply| Err(ApplicationError))
 	request.decode(Resp.simple_utf8("PONG")) == Err(ReplyDecodeFailure(ApplicationError))
 }
 
 expect {
-	request = Request.new(Command.ping({}), |_reply| Ok(42))
+	request = Request.new(Command.ping(), |_reply| Ok(42))
 	request.decode(Resp.error_utf8("ERR bad")) == Err(ServerError(Bytes.from_str("ERR bad")))
 }
 
 expect {
-	request = Request.new(Command.ping({}), |_reply| Ok(42)).map(|value| value + 1)
+	request = Request.new(Command.ping(), |_reply| Ok(42)).map(|value| value + 1)
 	request.decode(Resp.simple_utf8("PONG")) == Ok(43)
 }
