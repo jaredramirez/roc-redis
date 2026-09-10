@@ -8,7 +8,7 @@ Create a client from validated config once, then bind each connected stream:
 import redis.Client
 import redis.Transport
 
-client = Client.new(config)
+client = Client.{ config }
 
 transport = Transport.from_bytes_io({
     read_bytes!: |max_bytes| stream.read_up_to!(max_bytes, 2_000),
@@ -19,8 +19,8 @@ pong = connection.request!(Commands.Session.ping())?
 results = connection.batch!(batch)?
 ```
 
-`Client` holds the validated config plus optional session policy (`Client.with_auth`,
-`Client.with_db`). `connect!` runs the AUTH/SELECT handshake and returns a `Connection`;
+`Client` holds the validated config plus optional session policy (the `auth` and
+`select_db` fields). `connect!` runs the AUTH/SELECT handshake and returns a `Connection`;
 for pooling, `client.attach` binds a reused socket with no I/O and `client.handshake!`
 initializes a fresh one. `Transport.from_bytes_io` folds the raw-reader adapter (an
 empty read means end of stream); `Transport.new` takes an explicit `Data`/`End` reader.
@@ -79,11 +79,8 @@ import redis.Commands
 import redis.Config
 import redis.Execute
 
-# Recommended: build validated settings once, at module scope.
-config =
-    Config.default
-    |> Config.with_read_size(32_768)
-    |> Config.build
+# Recommended: construct validated settings once, at module scope.
+config = Config.{ read_size: 32_768 }
 
 request = Commands.Strings.set("key", "value", {
     condition: IfMissing,
@@ -92,9 +89,9 @@ request = Commands.Strings.set("key", "value", {
 result = Execute.request!(config, request, transport)?
 ```
 
-Scalar limits are compile-time-validated positives, so `Config.build` is total
-and a literal like `Config.with_read_size(0)` fails to compile; for a limit read
-at runtime, validate it with `Positive.from_u64` before passing it. Option records
+Scalar limits are compile-time-validated positives, so there is no build step and
+a literal like `Config.{ read_size: 0 }` fails to compile; for a limit read at
+runtime, validate it with `Positive.from_u64` before passing it. Option records
 infer their nominal type from the call and fill omitted fields with defaults.
 On the pinned compiler, an empty default option record must have an explicit
 type: import its module directly and use e.g. `Strings.SetOptions.{}`, or pass

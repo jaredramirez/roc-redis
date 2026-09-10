@@ -10,7 +10,6 @@ import pf.Server
 import pf.Tcp
 import http.Response
 import redis.Commands
-import redis.Config
 import redis.Client
 import redis.Transport
 
@@ -18,9 +17,7 @@ Context : {}
 
 program = { init!, respond!, shutdown! }
 
-config = Config.default |> Config.build
-
-client = Client.new(config)
+client = Client.{}
 
 init! = || Ok({ config: Server.default_config.with_listen({ host: "127.0.0.1", port: 8000 }), context: {} })
 

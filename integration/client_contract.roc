@@ -88,7 +88,7 @@ test_decoder_matrix! = |seed| {
 	Ok({})
 }
 
-execution_config = Config.default |> Config.build
+execution_config = Config.default
 
 ## A large number of reads must not grow the execution call stack. Bounds
 ## encode the cursor, avoiding hidden mutable state in the fake transport.
@@ -102,7 +102,7 @@ test_long_fragmented_exchange! = |seed| {
 	}
 	wire = "$25000\r\n".to_utf8().concat($payload).concat(['\r', '\n'])
 	size = Positive.from_u64(wire.len()) ? |_| ContractFailed("fragmented wire must be non-empty")
-	policy = Config.default |> Config.with_read_size(size) |> Config.with_max_response_bytes(size) |> Config.build
+	policy = Config.{ read_size: size, max_response_bytes: size }
 	transport : Execute.Transport(_, _)
 	transport = {
 		write_all!: |_| Ok({}),
@@ -120,13 +120,13 @@ test_long_fragmented_exchange! = |seed| {
 	}
 }
 
-tiny_execution_config = Config.default |> Config.with_max_request_bytes(13) |> Config.build
+tiny_execution_config = Config.{ max_request_bytes: 13 }
 
-short_read_config = Config.default |> Config.with_read_size(3) |> Config.build
+short_read_config = Config.{ read_size: 3 }
 
-response_budget_config = Config.default |> Config.with_max_response_bytes(6) |> Config.build
+response_budget_config = Config.{ max_response_bytes: 6 }
 
-single_command_config = Config.default |> Config.with_max_commands(1) |> Config.build
+single_command_config = Config.{ max_commands: 1 }
 
 ## Failure categories must preserve the original platform and protocol errors.
 test_execute_failures! : {} => Try({}, [ContractFailed(Str), ..])
@@ -309,13 +309,13 @@ test_execute! = |_| {
 	Ok({})
 }
 
-split_config = Config.default |> Config.with_max_response_bytes(7) |> Config.with_read_size(4) |> Config.build
+split_config = Config.{ max_response_bytes: 7, read_size: 4 }
 
-bulk_limit_config = Config.default |> Config.with_decoder_limits({ ..Decoder.default_limits, max_bulk_length: 1 }) |> Config.build
+bulk_limit_config = Config.{ limits: { ..Decoder.default_limits, max_bulk_length: 1 } }
 
-batch_budget_config = Config.default |> Config.with_max_response_bytes(9) |> Config.build
+batch_budget_config = Config.{ max_response_bytes: 9 }
 
-reuse_config = Config.default |> Config.with_max_response_bytes(17) |> Config.with_read_size(31) |> Config.build
+reuse_config = Config.{ max_response_bytes: 17, read_size: 31 }
 
 ## Coverage migrated from Client/Operation before removing those APIs.
 test_migrated_regressions! : {} => Try({}, [ContractFailed(Str), ..])
@@ -429,10 +429,11 @@ test_handshake! = |_| {
 		write_all!: |_| Ok({}),
 		read!: |_limit| Ok(Data("+OK\r\n".to_utf8())),
 	}
-	authed =
-		Client.new(execution_config)
-			|> Client.with_auth(Password(Bytes.from_str("secret")))
-			|> Client.with_db(3)
+	authed = Client.{
+		config: execution_config,
+		auth: Present(Password(Bytes.from_str("secret"))),
+		select_db: Present(3),
+	}
 	match authed.connect!(okay) {
 		Ok(_) => {}
 		Err(error) => return fail("valid handshake failed: ${Str.inspect(error)}")
@@ -443,7 +444,7 @@ test_handshake! = |_| {
 		write_all!: |_| Ok({}),
 		read!: |_limit| Ok(Data("-WRONGPASS invalid password\r\n".to_utf8())),
 	}
-	bad = Client.new(execution_config) |> Client.with_auth(Password(Bytes.from_str("nope")))
+	bad = Client.{ config: execution_config, auth: Present(Password(Bytes.from_str("nope"))) }
 	match bad.connect!(rejecting) {
 		Err(Rejected(Auth(_))) => {}
 		other => return fail("rejected AUTH surfaced as ${Str.inspect(other)}")
@@ -454,7 +455,7 @@ test_handshake! = |_| {
 		write_all!: |_| Err(MustNotWrite),
 		read!: |_limit| Err(MustNotRead),
 	}
-	match Client.new(execution_config).connect!(silent) {
+	match Client.{ config: execution_config }.connect!(silent) {
 		Ok(_) => Ok({})
 		Err(error) => fail("no-policy connect performed handshake I/O: ${Str.inspect(error)}")
 	}

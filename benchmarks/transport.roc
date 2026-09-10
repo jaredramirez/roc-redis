@@ -16,7 +16,7 @@ import redis.Reply
 import redis.Request
 import redis.Resp
 
-config = Config.default |> Config.build
+config = Config.default
 
 Event : { schema : Str, workload : Str, call : Str, bytes : U64, requested : U64 }
 

@@ -5,7 +5,7 @@ app [main!] {
 
 import redis.Config
 
-config = Config.default |> Config.with_read_size(0) |> Config.build
+config = Config.{ read_size: 0 }
 
 main! = |_args| {
 	_ = config.read_size()

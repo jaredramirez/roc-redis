@@ -6,8 +6,15 @@ import Positive
 import Reply
 import /Commands/Session as Session
 
-## A reusable client: validated Config plus optional session policy (auth and
-## database selection). It mints connections from the bare stream primitives.
+## A reusable client: validated Config plus optional session policy. Every field
+## has a default — config falls back to `Config.default` — so construct with `.{ }`
+## and set only what you need; there is no build step:
+##
+##   client = Client.{}
+##   custom = Client.{ config: Config.{ read_size: 32_768 }, auth: Present(creds), select_db: Present(3) }
+##
+## Database 0 is the default, expressed by leaving `select_db` unset; a positive
+## index excludes 0, so `select_db: Present(0)` is a compile-time error by design.
 ##
 ##   `attach`     pure  — bind a live transport into a Connection (no I/O).
 ##   `handshake!` effect — run the session setup (AUTH, SELECT) a fresh socket
@@ -18,24 +25,10 @@ import /Commands/Session as Session
 ## on each subsequent reuse. The client owns Redis session identity; the
 ## platform owns the socket, its lifecycle, deadlines, and TLS.
 Client := {
-	config : Config.Config,
-	auth : Reply.Optional(Session.Credentials),
-	select_db : Reply.Optional(Positive.Positive),
+	config : Config.Config ?? Config.default,
+	auth : Reply.Optional(Session.Credentials) ?? Absent,
+	select_db : Reply.Optional(Positive.Positive) ?? Absent,
 }.{
-
-	## A client with no authentication and the default database (db 0).
-	new : Config.Config -> Client
-	new = |config| Client.{ config, auth: Absent, select_db: Absent }
-
-	## Authenticate every fresh connection with these credentials.
-	with_auth : Client, Session.Credentials -> Client
-	with_auth = |client, credentials| { ..client, auth: Present(credentials) }
-
-	## Select a non-default database on every fresh connection. Database 0 is the
-	## default, so represent it by leaving this unset: a positive index excludes
-	## 0, which means `with_db(0)` is a compile-time error by design.
-	with_db : Client, Positive.Positive -> Client
-	with_db = |client, index| { ..client, select_db: Present(index) }
 
 	## Bind a live transport into a Connection. Pure: no I/O and no handshake.
 	## Use for a reused socket whose session is already established, or when you

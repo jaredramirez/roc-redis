@@ -42,12 +42,12 @@ Consumer := [].{
 		connection.request!(request)
 	}
 	batch! = |config, transport, batch| {
-		connection = Client.new(config).attach(transport)
+		connection = Client.{ config }.attach(transport)
 		connection.batch!(batch)
 	}
 }
 
-configured = Config.default |> Config.with_read_size(32_768) |> Config.build
+configured = Config.{ read_size: 32_768 }
 
 expect configured.read_size() == 32_768
 
@@ -97,7 +97,7 @@ expect {
 	}
 }
 
-expect (Config.default |> Config.with_read_size(1) |> Config.build).read_size() == 1
+expect (Config.{ read_size: 1 }).read_size() == 1
 
 expect {
 	key = Str.to_utf8("key")

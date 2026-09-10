@@ -21,7 +21,6 @@ import redis.Batch
 import redis.Bytes
 import redis.Client
 import redis.Commands
-import redis.Config
 import redis.Transport
 
 Context : {
@@ -31,9 +30,7 @@ Context : {
 
 program = { init!, respond!, shutdown! }
 
-redis_config = Config.default |> Config.build
-
-client = Client.new(redis_config)
+client = Client.{}
 
 init! : () => Try(
 	{ config : Server.Config, context : Context },

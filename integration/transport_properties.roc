@@ -19,16 +19,16 @@ import redis.Resp
 
 Fault : [EmptyRead, EndOfFile, Malformed, OversizedRead, PartialThenEnd, ReadError]
 
-default_config = Config.build(Config.default)
+default_config = Config.default
 
-one_command_config = Config.default |> Config.with_max_commands(1) |> Config.build
+one_command_config = Config.{ max_commands: 1 }
 
 request_limit : U64
 request_limit = ping_wire(1).len() - 1
 
 Ok(request_bytes) = Positive.from_u64(request_limit)
 
-short_request_config = Config.default |> Config.with_max_request_bytes(request_bytes) |> Config.build
+short_request_config = Config.{ max_request_bytes: request_bytes }
 
 main! : List(OsStr) => Try({}, [TransportPropertiesFailed(Str), Exit(I32), ..])
 main! = |args| {
@@ -200,11 +200,11 @@ fault_config = |commands, budget| {
 	command_limit = Positive.from_u64(commands)?
 	budget_limit = Positive.from_u64(budget)?
 	Ok(
-		Config.default
-			|> Config.with_max_commands(command_limit)
-			|> Config.with_read_size(budget_limit)
-			|> Config.with_max_response_bytes(budget_limit)
-			|> Config.build,
+		Config.{
+			max_commands: command_limit,
+			read_size: budget_limit,
+			max_response_bytes: budget_limit,
+		},
 	)
 }
 

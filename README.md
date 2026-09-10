@@ -41,8 +41,7 @@ import redis.Commands
 import redis.Config
 import redis.Transport
 
-config = Config.default |> Config.build
-client = Client.new(config)
+client = Client.{}
 
 main! : List(OsStr) => Try({}, [ExampleFailed(Str), Exit(I32), ..])
 main! = |_args| {
@@ -83,8 +82,8 @@ only against disposable data; stop Redis with Ctrl-C when finished.
 Your application owns the socket, TLS, deadlines, and exclusive access; the
 package needs only two effects, `read!` and `write_all!`. `Transport.from_bytes_io`
 wraps a raw byte reader and writer into a transport (an empty read means end of
-stream). `Client.new(config)` holds your configuration and session policy
-(`with_auth`, `with_db`); `client.connect!(transport)` runs the AUTH/SELECT
+stream). `Client.{ config }` holds your configuration and session policy
+(set `auth` and `select_db`); `client.connect!(transport)` runs the AUTH/SELECT
 handshake and returns a ready `Connection`. For pooling, `client.attach` binds a
 reused socket without a handshake and `client.handshake!` initializes a freshly
 dialed one.

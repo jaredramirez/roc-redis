@@ -6,15 +6,12 @@ app [main!] {
 
 import pf.Tcp
 import redis.Commands
-import redis.Config
 import redis.Connection
 import redis.Client
 import redis.Transport
 import redis.Execute
 
-config = Config.default |> Config.build
-
-client = Client.new(config)
+client = Client.{}
 
 transport_for : Tcp.Stream -> Execute.Transport(Tcp.Error, Tcp.Error)
 transport_for = |stream| Transport.from_bytes_io({

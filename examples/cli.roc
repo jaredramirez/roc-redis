@@ -8,13 +8,10 @@ import pf.Tcp
 import pf.Stdout
 import pf.OsStr exposing [OsStr]
 import redis.Commands
-import redis.Config
 import redis.Client
 import redis.Transport
 
-config = Config.default |> Config.build
-
-client = Client.new(config)
+client = Client.{}
 
 main! : List(OsStr) => Try({}, [ExampleFailed(Str), Exit(I32), ..])
 main! = |_args| {

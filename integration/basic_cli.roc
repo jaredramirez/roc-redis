@@ -34,9 +34,9 @@ io_idle_timeout_ms = 2_000
 test_value : List(U8)
 test_value = [0, 13, 10, 255, 128, 65]
 
-config = Config.default |> Config.build
+config = Config.default
 
-client = Client.new(config)
+client = Client.{ config }
 
 main! : List(OsStr) => Try({}, [IntegrationFailed(Str), Exit(I32), ..])
 main! = |args| {

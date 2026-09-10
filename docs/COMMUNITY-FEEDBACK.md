@@ -60,18 +60,18 @@ boundary without a live server. No new combinator API was added.
 **Assessment:** a pure Builder and non-failing setters feed one final build.
 Scalar limits are now compile-time-validated positives, so build is total and the
 module-level binding needs no Ok destructure; an invalid literal such as
-`Config.with_read_size(0)` fails to compile. Bytes, NonEmptyBytes, NonEmpty, and
+`Config.{ read_size: 0 }` fails to compile. Bytes, NonEmptyBytes, NonEmpty, and
 Positive separate useful invariants without forcing text decoding.
 See their corresponding `package/` modules.
 
-**Friction:** setters use `with_max_*` while getters use `*_limit`; literal hooks
+**Friction:** fields use `max_*` while getters use `*_limit`; literal hooks
 have diagnostic errors different from runtime constructors; NonEmpty examples
 sometimes need explicit element types to communicate intended inference.
 
 Questions to ask:
 
-- Is one `Config.default |> with_* |> build` chain intuitive for both constant
-  and runtime settings?
+- Is `Config.{ read_size: 32_768 }` (defaults for the rest) intuitive for both
+  constant and runtime settings?
 - Are literal-hook diagnostics versus runtime constructor errors unsurprising?
 - What explicit form is clearest when constructing a `NonEmpty(Bytes)` value?
 

@@ -8,7 +8,7 @@ import redis.Config
 
 # Database 0 is the default, expressed by leaving the database unset. A positive
 # index excludes 0, so selecting database 0 must fail to compile.
-client = Config.default |> Config.build |> Client.new |> Client.with_db(0)
+client = Client.{ config: Config.default, select_db: Present(0) }
 
 main! = |_args| {
 	_ = client
