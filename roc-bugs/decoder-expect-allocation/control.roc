@@ -24,7 +24,7 @@ all_splits = |wire, expected, split|
 	if split > wire.len() {
 		True
 	} else {
-		match Decoder.feed(Decoder.init({}), wire.take_first(split)) {
+		match Decoder.feed(Decoder.init(), wire.take_first(split)) {
 			Failed(_) => False
 			Progress({ decoder, values }) => match Decoder.feed(decoder, wire.drop_first(split)) {
 				Failed(_) => False
@@ -42,5 +42,5 @@ expect {
 		$byte = $byte + 1
 	}
 	wire = "$256\r\n".to_utf8().concat($payload).concat(['\r', '\n'])
-	all_splits(wire, Resp.BulkString($payload), 0) and feed_bytes(Decoder.init({}), wire, 0, [])
+	all_splits(wire, Resp.BulkString($payload), 0) and feed_bytes(Decoder.init(), wire, 0, [])
 }
