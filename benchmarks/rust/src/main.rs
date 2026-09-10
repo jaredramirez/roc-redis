@@ -147,6 +147,9 @@ fn workload(
     batch: u64,
     set_key: &str,
     incr_key: &str,
+    mset_keys: &[String],
+    hash_key: &str,
+    sg_pipe_key: &str,
 ) -> Result<()> {
     match name {
         "ping_sequential" => {
@@ -189,6 +192,74 @@ fn workload(
                 completed += current;
             }
         }
+        "mset_mget_sequential" => {
+            for _ in 0..count {
+                let mut mset = redis::cmd("MSET");
+                for key in mset_keys {
+                    mset.arg(key).arg(PAYLOAD);
+                }
+                let stored: String = mset.query(connection)?;
+                if stored != "OK" {
+                    return Err("MSET reply mismatch".into());
+                }
+                let mut mget = redis::cmd("MGET");
+                for key in mset_keys {
+                    mget.arg(key);
+                }
+                let values: Vec<Vec<u8>> = mget.query(connection)?;
+                if values.len() != mset_keys.len() || values.iter().any(|v| v != PAYLOAD) {
+                    return Err("MGET mismatch".into());
+                }
+            }
+        }
+        "hash_roundtrip_sequential" => {
+            for _ in 0..count {
+                let written: i64 = redis::cmd("HSET")
+                    .arg(hash_key)
+                    .arg("field:0")
+                    .arg(PAYLOAD)
+                    .arg("field:1")
+                    .arg(PAYLOAD)
+                    .arg("field:2")
+                    .arg(PAYLOAD)
+                    .query(connection)?;
+                if written < 0 {
+                    return Err("HSET reply mismatch".into());
+                }
+                let fields: BTreeMap<String, Vec<u8>> =
+                    redis::cmd("HGETALL").arg(hash_key).query(connection)?;
+                for field in ["field:0", "field:1", "field:2"] {
+                    match fields.get(field) {
+                        Some(value) if value.as_slice() == PAYLOAD => {}
+                        _ => return Err("HGETALL mismatch".into()),
+                    }
+                }
+            }
+        }
+        "set_get_pipeline" => {
+            let mut completed = 0;
+            while completed < count {
+                let current = batch.min(count - completed);
+                let mut pipeline = redis::pipe();
+                for _ in 0..current {
+                    pipeline
+                        .cmd("SET")
+                        .arg(sg_pipe_key)
+                        .arg(PAYLOAD)
+                        .arg("PX")
+                        .arg(TTL)
+                        .cmd("GET")
+                        .arg(sg_pipe_key);
+                }
+                let values: Vec<(String, Vec<u8>)> = pipeline.query(connection)?;
+                if values.len() != current as usize
+                    || values.iter().any(|(ok, value)| ok != "OK" || value != PAYLOAD)
+                {
+                    return Err("pipeline SET/GET mismatch".into());
+                }
+                completed += current;
+            }
+        }
         _ => return Err("unknown workload".into()),
     }
     Ok(())
@@ -200,6 +271,9 @@ fn run(
     version: &str,
     set_key: &str,
     incr_key: &str,
+    mset_keys: &[String],
+    hash_key: &str,
+    sg_pipe_key: &str,
 ) -> Result<()> {
     // One synchronous connection, including pipelines. Prove the identity
     // outside timing; do not use a pool, transaction, or automatic retry loop.
@@ -217,6 +291,9 @@ fn run(
         "set_get_sequential",
         "incr_sequential",
         "ping_pipeline",
+        "mset_mget_sequential",
+        "hash_roundtrip_sequential",
+        "set_get_pipeline",
     ] {
         for sample in 1..=config.samples {
             if name == "incr_sequential" {
@@ -229,6 +306,9 @@ fn run(
                 config.batch,
                 set_key,
                 incr_key,
+                mset_keys,
+                hash_key,
+                sg_pipe_key,
             )?;
             if name == "incr_sequential" {
                 set(connection, incr_key, b"0", false)?;
@@ -241,10 +321,20 @@ fn run(
                 config.batch,
                 set_key,
                 incr_key,
+                mset_keys,
+                hash_key,
+                sg_pipe_key,
             )?;
             let elapsed: u64 = start.elapsed().as_nanos().try_into()?;
-            let commands = config.iterations * if name == "set_get_sequential" { 2 } else { 1 };
-            let trips = if name == "ping_pipeline" {
+            let commands = config.iterations
+                * match name {
+                    "set_get_sequential"
+                    | "mset_mget_sequential"
+                    | "hash_roundtrip_sequential"
+                    | "set_get_pipeline" => 2,
+                    _ => 1,
+                };
+            let trips = if name == "ping_pipeline" || name == "set_get_pipeline" {
                 config.iterations.div_ceil(config.batch)
             } else {
                 commands
@@ -282,19 +372,37 @@ fn main_result() -> Result<()> {
     let lease = format!("{prefix}:lease");
     let set_key = format!("{prefix}:set-get");
     let incr_key = format!("{prefix}:incr");
+    let mset_keys = [
+        format!("{prefix}:mset:0"),
+        format!("{prefix}:mset:1"),
+        format!("{prefix}:mset:2"),
+        format!("{prefix}:mset:3"),
+    ];
+    let hash_key = format!("{prefix}:hash");
+    let sg_pipe_key = format!("{prefix}:sg-pipe");
     if !set(&mut connection, &lease, b"benchmark-lease", true)? {
         return Err("key-prefix lease already exists; no benchmark keys changed".into());
     }
-    let outcome = run(&config, &mut connection, version, &set_key, &incr_key);
+    let outcome = run(
+        &config,
+        &mut connection,
+        version,
+        &set_key,
+        &incr_key,
+        &mset_keys,
+        &hash_key,
+        &sg_pipe_key,
+    );
     drop(connection);
     // A failed connection may have partially transmitted work. Cleanup uses a
     // fresh connection and only the keys protected by this acquired lease.
     let cleanup = (|| -> Result<()> {
         let mut cleanup_connection = config.connect()?;
         let deleted: i64 = redis::cmd("DEL")
-            .arg(&[set_key, incr_key, lease])
+            .arg(&[set_key, incr_key, lease, hash_key, sg_pipe_key])
+            .arg(&mset_keys)
             .query(&mut cleanup_connection)?;
-        if !(0..=3).contains(&deleted) {
+        if !(0..=9).contains(&deleted) {
             return Err("invalid cleanup DEL result".into());
         }
         Ok(())

@@ -18,6 +18,7 @@ import redis.Execute
 import redis.Reply
 import redis.Request
 import redis.Command
+import redis.Hashes as RawHashes
 import redis.Keyspace as RawKeyspace
 import redis.Resp
 import redis.Strings as RawStrings
@@ -358,22 +359,43 @@ cleanup_keys! = |config, marker_key, set_key, incr_key| {
 				.map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
 		write_all!: |bytes| stream.write!(bytes, config.timeout_ms),
 	}
-	result = raw_request!(RawKeyspace.del(marker_key, [set_key, incr_key]), transport)
+	mset_keys = mset_keys_for(config.key_prefix)
+	hash_key = "${config.key_prefix}:hash".to_utf8()
+	pipe_key = "${config.key_prefix}:sg-pipe".to_utf8()
+	other_keys = [set_key, incr_key].concat(mset_keys).concat([hash_key, pipe_key])
+	result = raw_request!(RawKeyspace.del(marker_key, other_keys), transport)
 		? |error| BenchmarkFailed("delete benchmark keys: ${Str.inspect(error)}")
 	match result {
-		Resp.Integer(number) if number >= 0 and number <= 3 => Ok({})
-		response => Err(BenchmarkFailed("cleanup DEL returned ${describe_response(response)}, expected an integer from 0 through 3"))
+		Resp.Integer(number) if number >= 0 and number <= 9 => Ok({})
+		response => Err(BenchmarkFailed("cleanup DEL returned ${describe_response(response)}, expected an integer from 0 through 9"))
 	}
 }
 
 run_benchmarks! : Config, Execute.Transport(read_err, write_err), List(U8), List(U8) => Try({}, [BenchmarkFailed(Str)])
 run_benchmarks! = |config, transport, set_key, incr_key| {
+	mset_keys = mset_keys_for(config.key_prefix)
+	hash_key = "${config.key_prefix}:hash".to_utf8()
+	pipe_key = "${config.key_prefix}:sg-pipe".to_utf8()
 	{} = run_ping!(1, transport)?
 	{} = benchmark_ping_samples!(config, 1, transport)?
 	{} = benchmark_set_get_samples!(config, 1, transport, set_key)?
 	{} = benchmark_incr_samples!(config, 1, transport, incr_key)?
-	benchmark_pipeline_samples!(config, 1, transport)
+	{} = benchmark_pipeline_samples!(config, 1, transport)?
+	{} = benchmark_mset_mget_samples!(config, 1, transport, mset_keys)?
+	{} = benchmark_hash_roundtrip_samples!(config, 1, transport, hash_key, hash_fields)?
+	benchmark_set_get_pipeline_samples!(config, 1, transport, pipe_key)
 }
+
+mset_keys_for : Str -> List(List(U8))
+mset_keys_for = |prefix| [
+	"${prefix}:mset:0".to_utf8(),
+	"${prefix}:mset:1".to_utf8(),
+	"${prefix}:mset:2".to_utf8(),
+	"${prefix}:mset:3".to_utf8(),
+]
+
+hash_fields : List(List(U8))
+hash_fields = ["field:0".to_utf8(), "field:1".to_utf8(), "field:2".to_utf8()]
 
 benchmark_ping_samples! : Config, U64, Execute.Transport(read_err, write_err) => Try({}, [BenchmarkFailed(Str)])
 benchmark_ping_samples! = |config, sample, transport|
@@ -494,6 +516,116 @@ run_ping_pipeline! = |remaining, batch_size, transport|
 			run_ping_pipeline!(remaining - current_batch, batch_size, transport)
 		} else {
 			Err(BenchmarkFailed("PING pipeline returned ${result.len().to_str()} replies with an invalid value; expected ${current_batch.to_str()} PONG replies"))
+		}
+	}
+
+benchmark_mset_mget_samples! : Config, U64, Execute.Transport(read_err, write_err), List(List(U8)) => Try({}, [BenchmarkFailed(Str)])
+benchmark_mset_mget_samples! = |config, sample, transport, keys|
+	if sample > config.samples {
+		Ok({})
+	} else {
+		{} = run_mset_mget!(config.warmup, transport, keys)?
+		start = Utc.now!()
+		{} = run_mset_mget!(config.iterations, transport, keys)?
+		end = Utc.now!()
+		elapsed = elapsed_nanos(start, end)?
+		{} = emit_result!(config, "mset_mget_sequential", sample, config.iterations, config.iterations * 2, config.iterations * 2, elapsed)?
+		benchmark_mset_mget_samples!(config, sample + 1, transport, keys)
+	}
+
+run_mset_mget! : U64, Execute.Transport(read_err, write_err), List(List(U8)) => Try({}, [BenchmarkFailed(Str)])
+run_mset_mget! = |remaining, transport, keys|
+	if remaining == 0 {
+		Ok({})
+	} else {
+		entries = keys.map(|key| { key, value: binary_payload })
+		first_entry = entries.first() ? |_| BenchmarkFailed("MSET requires at least one key")
+		set_result = raw_request!(RawStrings.mset(first_entry, entries.drop_first(1)), transport)
+			? |error| BenchmarkFailed("MSET: ${Str.inspect(error)}")
+		{} = require_response("MSET", set_result, Resp.simple_utf8("OK"))?
+		first_key = keys.first() ? |_| BenchmarkFailed("MGET requires at least one key")
+		get_result = raw_request!(RawStrings.mget(first_key, keys.drop_first(1)), transport)
+			? |error| BenchmarkFailed("MGET: ${Str.inspect(error)}")
+		expected = Resp.Array(keys.map(|_key| Resp.BulkString(binary_payload)))
+		{} = require_response("MGET", get_result, expected)?
+		run_mset_mget!(remaining - 1, transport, keys)
+	}
+
+benchmark_hash_roundtrip_samples! : Config, U64, Execute.Transport(read_err, write_err), List(U8), List(List(U8)) => Try({}, [BenchmarkFailed(Str)])
+benchmark_hash_roundtrip_samples! = |config, sample, transport, key, fields|
+	if sample > config.samples {
+		Ok({})
+	} else {
+		{} = run_hash_roundtrip!(config.warmup, transport, key, fields)?
+		start = Utc.now!()
+		{} = run_hash_roundtrip!(config.iterations, transport, key, fields)?
+		end = Utc.now!()
+		elapsed = elapsed_nanos(start, end)?
+		{} = emit_result!(config, "hash_roundtrip_sequential", sample, config.iterations, config.iterations * 2, config.iterations * 2, elapsed)?
+		benchmark_hash_roundtrip_samples!(config, sample + 1, transport, key, fields)
+	}
+
+run_hash_roundtrip! : U64, Execute.Transport(read_err, write_err), List(U8), List(List(U8)) => Try({}, [BenchmarkFailed(Str)])
+run_hash_roundtrip! = |remaining, transport, key, fields|
+	if remaining == 0 {
+		Ok({})
+	} else {
+		entries = fields.map(|field| { field, value: binary_payload })
+		first_entry = entries.first() ? |_| BenchmarkFailed("HSET requires at least one field")
+		set_result = raw_request!(RawHashes.hset(key, first_entry, entries.drop_first(1)), transport)
+			? |error| BenchmarkFailed("HSET: ${Str.inspect(error)}")
+		{} = require_hset_result(set_result)?
+		get_result = raw_request!(RawHashes.hgetall(key), transport)
+			? |error| BenchmarkFailed("HGETALL: ${Str.inspect(error)}")
+		{} = require_hgetall_result(get_result, fields.len())?
+		run_hash_roundtrip!(remaining - 1, transport, key, fields)
+	}
+
+require_hset_result : Resp.Resp -> Try({}, [BenchmarkFailed(Str)])
+require_hset_result = |actual|
+	match actual {
+		Resp.Integer(number) if number >= 0 => Ok({})
+		response => Err(BenchmarkFailed("HSET returned ${describe_response(response)}, expected a non-negative integer"))
+	}
+
+require_hgetall_result : Resp.Resp, U64 -> Try({}, [BenchmarkFailed(Str)])
+require_hgetall_result = |actual, field_count|
+	match actual {
+		Resp.Array(elements) if elements.len() == field_count * 2 => Ok({})
+		response => Err(BenchmarkFailed("HGETALL returned ${describe_response(response)}, expected an array of ${(field_count * 2).to_str()} elements"))
+	}
+
+benchmark_set_get_pipeline_samples! : Config, U64, Execute.Transport(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
+benchmark_set_get_pipeline_samples! = |config, sample, transport, key|
+	if sample > config.samples {
+		Ok({})
+	} else {
+		{} = run_set_get_pipeline!(config.warmup, config.pipeline_batch, transport, key)?
+		start = Utc.now!()
+		{} = run_set_get_pipeline!(config.iterations, config.pipeline_batch, transport, key)?
+		end = Utc.now!()
+		elapsed = elapsed_nanos(start, end)?
+		round_trips = ceiling_divide(config.iterations, config.pipeline_batch)
+		{} = emit_result!(config, "set_get_pipeline", sample, config.iterations, config.iterations * 2, round_trips, elapsed)?
+		benchmark_set_get_pipeline_samples!(config, sample + 1, transport, key)
+	}
+
+run_set_get_pipeline! : U64, U64, Execute.Transport(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
+run_set_get_pipeline! = |remaining, batch_size, transport, key|
+	if remaining == 0 {
+		Ok({})
+	} else {
+		current_batch = if remaining < batch_size remaining else batch_size
+		set_command = RawStrings.set(key, binary_payload, [Str.to_utf8("PX"), key_ttl_ms])
+		get_command = RawStrings.get(key)
+		requests = List.repeat([Request.new(set_command, Reply.raw), Request.new(get_command, Reply.raw)], current_batch).join_map(|pair| pair)
+		result = Execute.batch!(execution_config, Batch.all(requests), transport)
+			? |error| BenchmarkFailed("SET/GET pipeline: ${Str.inspect(error)}")
+		expected = List.repeat([Resp.simple_utf8("OK"), Resp.BulkString(binary_payload)], current_batch).join_map(|pair| pair)
+		if result == expected {
+			run_set_get_pipeline!(remaining - current_batch, batch_size, transport, key)
+		} else {
+			Err(BenchmarkFailed("SET/GET pipeline returned ${result.len().to_str()} replies with unexpected values; expected ${(current_batch * 2).to_str()}"))
 		}
 	}
 

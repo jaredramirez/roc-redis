@@ -244,6 +244,78 @@ def ping_pipeline(client: redis.Redis, count: int, batch_size: int) -> None:
         completed += current_batch
 
 
+def mset_mget_sequential(client: redis.Redis, keys: tuple[bytes, ...], count: int) -> None:
+    mapping = {key: BINARY_PAYLOAD for key in keys}
+    for index in range(count):
+        require(
+            client.mset(mapping) is True,
+            f"MSET {index + 1} returned a non-OK reply",
+        )
+        values = client.mget(keys)
+        require(
+            len(values) == len(keys),
+            f"MGET {index + 1} returned {len(values)} values, expected {len(keys)}",
+        )
+        for offset, value in enumerate(values):
+            require(
+                value == BINARY_PAYLOAD,
+                f"MGET {index + 1} field {offset} returned {value!r}, expected the binary payload",
+            )
+
+
+def hash_roundtrip_sequential(client: redis.Redis, key: bytes, count: int) -> None:
+    fields = (b"field:0", b"field:1", b"field:2")
+    mapping = {field: BINARY_PAYLOAD for field in fields}
+    for index in range(count):
+        # HSET returns 0..3 depending on how many fields were newly added, so
+        # accept any non-negative reply rather than a specific count.
+        added = client.hset(key, mapping=mapping)  # type: ignore[no-untyped-call]
+        require(
+            isinstance(added, int) and added >= 0,
+            f"HSET {index + 1} returned {added!r}, expected a non-negative reply",
+        )
+        actual = client.hgetall(key)
+        require(
+            len(actual) == len(fields),
+            f"HGETALL {index + 1} returned {len(actual)} fields, expected {len(fields)}",
+        )
+        for field in fields:
+            value = actual.get(field)
+            require(
+                value == BINARY_PAYLOAD,
+                f"HGETALL {index + 1} field {field!r} returned {value!r}, expected the binary payload",
+            )
+
+
+def set_get_pipeline(
+    client: redis.Redis, key: bytes, count: int, batch_size: int
+) -> None:
+    completed = 0
+    while completed < count:
+        current_batch = min(batch_size, count - completed)
+        with client.pipeline(transaction=False) as pipeline:
+            for _ in range(current_batch):
+                pipeline.set(key, BINARY_PAYLOAD, px=KEY_TTL_MS)
+                pipeline.get(key)
+            replies = pipeline.execute(raise_on_error=True)
+        require(
+            len(replies) == 2 * current_batch,
+            f"pipeline returned {len(replies)} replies, expected {2 * current_batch}",
+        )
+        for offset in range(current_batch):
+            set_reply = replies[2 * offset]
+            get_reply = replies[2 * offset + 1]
+            require(
+                set_reply is True,
+                f"pipelined SET {completed + offset + 1} returned a non-OK reply",
+            )
+            require(
+                get_reply == BINARY_PAYLOAD,
+                f"pipelined GET {completed + offset + 1} returned {get_reply!r}, expected the binary payload",
+            )
+        completed += current_batch
+
+
 def emit_result(
     config: Config,
     workload: str,
@@ -298,7 +370,15 @@ def prepare_counter(client: redis.Redis, key: bytes) -> None:
     )
 
 
-def run(config: Config, client: redis.Redis, set_key: bytes, incr_key: bytes) -> None:
+def run(
+    config: Config,
+    client: redis.Redis,
+    set_key: bytes,
+    incr_key: bytes,
+    mset_keys: tuple[bytes, ...],
+    hash_key: bytes,
+    sg_pipe_key: bytes,
+) -> None:
     verify_shared_connection(client)
     require(client.ping() is True, "initial PING returned a non-PONG reply")
 
@@ -363,6 +443,53 @@ def run(config: Config, client: redis.Redis, set_key: bytes, incr_key: bytes) ->
             elapsed,
         )
 
+    for sample in range(1, config.samples + 1):
+        mset_mget_sequential(client, mset_keys, config.warmup)
+        elapsed = measure(
+            lambda: mset_mget_sequential(client, mset_keys, config.iterations)
+        )
+        emit_result(
+            config,
+            "mset_mget_sequential",
+            sample,
+            config.iterations,
+            2 * config.iterations,
+            2 * config.iterations,
+            elapsed,
+        )
+
+    for sample in range(1, config.samples + 1):
+        hash_roundtrip_sequential(client, hash_key, config.warmup)
+        elapsed = measure(
+            lambda: hash_roundtrip_sequential(client, hash_key, config.iterations)
+        )
+        emit_result(
+            config,
+            "hash_roundtrip_sequential",
+            sample,
+            config.iterations,
+            2 * config.iterations,
+            2 * config.iterations,
+            elapsed,
+        )
+
+    for sample in range(1, config.samples + 1):
+        set_get_pipeline(client, sg_pipe_key, config.warmup, config.pipeline_batch)
+        elapsed = measure(
+            lambda: set_get_pipeline(
+                client, sg_pipe_key, config.iterations, config.pipeline_batch
+            )
+        )
+        emit_result(
+            config,
+            "set_get_pipeline",
+            sample,
+            config.iterations,
+            2 * config.iterations,
+            pipeline_round_trips,
+            elapsed,
+        )
+
 
 def cleanup(config: Config, keys: tuple[bytes, ...]) -> None:
     cleanup_client = new_client(config)
@@ -381,7 +508,12 @@ def main(argv: list[str]) -> int:
     marker_key = f"{config.key_prefix}:lease".encode("ascii")
     set_key = f"{config.key_prefix}:set-get".encode("ascii")
     incr_key = f"{config.key_prefix}:incr".encode("ascii")
-    all_keys = (marker_key, set_key, incr_key)
+    mset_keys = tuple(
+        f"{config.key_prefix}:mset:{index}".encode("ascii") for index in range(4)
+    )
+    hash_key = f"{config.key_prefix}:hash".encode("ascii")
+    sg_pipe_key = f"{config.key_prefix}:sg-pipe".encode("ascii")
+    all_keys = (marker_key, set_key, incr_key, *mset_keys, hash_key, sg_pipe_key)
     client = new_client(config)
     owns_lease = False
     primary_error: BaseException | None = None
@@ -395,7 +527,7 @@ def main(argv: list[str]) -> int:
             owns_lease,
             "key-prefix lease already exists; supply an exclusive --key-prefix",
         )
-        run(config, client, set_key, incr_key)
+        run(config, client, set_key, incr_key, mset_keys, hash_key, sg_pipe_key)
     # Preserve cleanup even for cancellation and interpreter-exit signals.
     except BaseException as error:  # noqa: BLE001
         primary_error = error

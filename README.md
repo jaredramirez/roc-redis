@@ -103,19 +103,28 @@ platform-owned pooling; it is not a production concurrent pool.
 
 ## Benchmarks
 
-![Four workload charts comparing Roc, Python, Go, Rust, and C throughput. Higher is better; each panel has its own zero-based scale.](docs/assets/benchmarks.svg)
+Operations per second by workload and client (**higher is better**). Each
+`SET+GET`, `MSET/MGET`, hash roundtrip, and pipelined pair counts as one
+operation; pipelines hold up to 100 operations.
 
-Historical September 7 campaign: Redis 8.10.1 over loopback on Apple Silicon
-macOS, 5,000 operations/sample, 30 samples per client/workload across ten balanced
-orders. **Higher operations/second is better.** SET+GET counts as one operation;
-pipelines contain 100 PINGs.
+| Experiment | roc-redis | redis-py | go-redis | redis-rs | hiredis |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `ping_sequential` | 14,694 | 12,488 | 13,619 | 14,593 | 14,506 |
+| `set_get_sequential` | 7,252 | 5,958 | 6,765 | 7,283 | 7,313 |
+| `incr_sequential` | 14,657 | 12,425 | 13,680 | 14,530 | 14,528 |
+| `ping_pipeline` | 972,006 | 357,869 | 1,010,951 | 1,148,545 | 1,147,183 |
+| `mset_mget_sequential` | — | — | — | — | — |
+| `hash_roundtrip_sequential` | — | — | — | — | — |
+| `set_get_pipeline` | — | — | — | — | — |
 
-Roc used the experimental speed backend and basic-cli 0.22.2. These results
-predate subsequent decoder changes and the platform upgrade; they are not a
-measurement of the current checkout or a general language ranking.
-Roc used a wall-clock timer; other clients used monotonic timers.
+The first four rows are the archived September 7 campaign (Redis 8.10.1 over
+loopback on Apple Silicon; Roc on the experimental speed backend, basic-cli
+0.22.2). They predate the current checkout and are not a language ranking. The
+three realistic workloads are pending a fresh run. Regenerate all seven on an
+isolated host with `just benchmark` (or `just benchmark-all`) — the controller
+prints this exact table.
 
-[Exact values and chart provenance](docs/benchmark-chart.md) ·
+[Chart provenance and exact values](docs/benchmark-chart.md) ·
 [Workloads and reproduction](benchmarks/README.md) ·
 [Performance learnings](perf.md)
 

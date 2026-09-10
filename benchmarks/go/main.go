@@ -391,6 +391,109 @@ func pingPipeline(ctx context.Context, client *redis.Client, count, batchSize ui
 	return nil
 }
 
+func msetMgetSequential(ctx context.Context, client *redis.Client, keys []string, count uint64) error {
+	setArgs := make([]interface{}, 0, len(keys)*2)
+	for _, key := range keys {
+		setArgs = append(setArgs, key, binaryPayload)
+	}
+	for index := uint64(0); index < count; index++ {
+		actual, err := client.MSet(ctx, setArgs...).Result()
+		if err != nil {
+			return fmt.Errorf("MSET %d: %w", index+1, err)
+		}
+		if actual != "OK" {
+			return fmt.Errorf("MSET %d returned %q, expected OK", index+1, actual)
+		}
+		values, err := client.MGet(ctx, keys...).Result()
+		if err != nil {
+			return fmt.Errorf("MGET %d: %w", index+1, err)
+		}
+		if len(values) != len(keys) {
+			return fmt.Errorf("MGET %d returned %d values, expected %d", index+1, len(values), len(keys))
+		}
+		for offset, value := range values {
+			text, ok := value.(string)
+			if !ok {
+				return fmt.Errorf("MGET %d value %d returned %T, expected string", index+1, offset+1, value)
+			}
+			if !bytes.Equal([]byte(text), binaryPayload) {
+				return fmt.Errorf("MGET %d value %d returned %x, expected %x", index+1, offset+1, []byte(text), binaryPayload)
+			}
+		}
+	}
+	return nil
+}
+
+func hashRoundtripSequential(ctx context.Context, client *redis.Client, key string, count uint64) error {
+	fields := []string{"field:0", "field:1", "field:2"}
+	setArgs := make([]interface{}, 0, len(fields)*2)
+	for _, field := range fields {
+		setArgs = append(setArgs, field, binaryPayload)
+	}
+	for index := uint64(0); index < count; index++ {
+		added, err := client.HSet(ctx, key, setArgs...).Result()
+		if err != nil {
+			return fmt.Errorf("HSET %d: %w", index+1, err)
+		}
+		if added < 0 {
+			return fmt.Errorf("HSET %d returned %d, expected a non-negative count", index+1, added)
+		}
+		stored, err := client.HGetAll(ctx, key).Result()
+		if err != nil {
+			return fmt.Errorf("HGETALL %d: %w", index+1, err)
+		}
+		if len(stored) != len(fields) {
+			return fmt.Errorf("HGETALL %d returned %d fields, expected %d", index+1, len(stored), len(fields))
+		}
+		for _, field := range fields {
+			text, ok := stored[field]
+			if !ok {
+				return fmt.Errorf("HGETALL %d omitted field %q", index+1, field)
+			}
+			if !bytes.Equal([]byte(text), binaryPayload) {
+				return fmt.Errorf("HGETALL %d field %q returned %x, expected %x", index+1, field, []byte(text), binaryPayload)
+			}
+		}
+	}
+	return nil
+}
+
+func setGetPipeline(ctx context.Context, client *redis.Client, key string, count, batchSize uint64) error {
+	completed := uint64(0)
+	for completed < count {
+		currentBatch := min(batchSize, count-completed)
+		pipeline := client.Pipeline()
+		setCommands := make([]*redis.StatusCmd, 0, currentBatch)
+		getCommands := make([]*redis.StringCmd, 0, currentBatch)
+		for index := uint64(0); index < currentBatch; index++ {
+			setCommands = append(setCommands, pipeline.Set(ctx, key, binaryPayload, keyTTL))
+			getCommands = append(getCommands, pipeline.Get(ctx, key))
+		}
+		_, execErr := pipeline.Exec(ctx)
+		if execErr != nil {
+			return fmt.Errorf("execute SET/GET pipeline after %d operations: %w", completed, execErr)
+		}
+		for offset := range setCommands {
+			actual, err := setCommands[offset].Result()
+			if err != nil {
+				return fmt.Errorf("pipelined SET %d: %w", completed+uint64(offset)+1, err)
+			}
+			if actual != "OK" {
+				return fmt.Errorf("pipelined SET %d returned %q, expected OK", completed+uint64(offset)+1, actual)
+			}
+			bytesValue, err := getCommands[offset].Bytes()
+			if err != nil {
+				return fmt.Errorf("pipelined GET %d: %w", completed+uint64(offset)+1, err)
+			}
+			if !bytes.Equal(bytesValue, binaryPayload) {
+				return fmt.Errorf("pipelined GET %d returned %x, expected %x", completed+uint64(offset)+1, bytesValue, binaryPayload)
+			}
+		}
+		completed += currentBatch
+	}
+	return nil
+}
+
 func prepareCounter(ctx context.Context, client *redis.Client, key string) error {
 	actual, err := client.Set(ctx, key, "0", keyTTL).Result()
 	if err != nil {
@@ -446,7 +549,7 @@ func emit(values config, workload string, sample, operations, commands, roundTri
 	})
 }
 
-func run(ctx context.Context, values config, client *redis.Client, setKey, incrKey string) error {
+func run(ctx context.Context, values config, client *redis.Client, setKey, incrKey string, msetKeys []string, hashKey, setGetPipeKey string) error {
 	if err := verifySharedConnection(ctx, client); err != nil {
 		return err
 	}
@@ -512,6 +615,45 @@ func run(ctx context.Context, values config, client *redis.Client, setKey, incrK
 			return fmt.Errorf("write ping_pipeline result: %w", err)
 		}
 	}
+
+	for sample := uint64(1); sample <= values.samples; sample++ {
+		if err := msetMgetSequential(ctx, client, msetKeys, values.warmup); err != nil {
+			return fmt.Errorf("mset_mget_sequential sample %d warmup: %w", sample, err)
+		}
+		elapsed, err := measure(func() error { return msetMgetSequential(ctx, client, msetKeys, values.iterations) })
+		if err != nil {
+			return fmt.Errorf("mset_mget_sequential sample %d: %w", sample, err)
+		}
+		if err := emit(values, "mset_mget_sequential", sample, values.iterations, 2*values.iterations, 2*values.iterations, elapsed); err != nil {
+			return fmt.Errorf("write mset_mget_sequential result: %w", err)
+		}
+	}
+
+	for sample := uint64(1); sample <= values.samples; sample++ {
+		if err := hashRoundtripSequential(ctx, client, hashKey, values.warmup); err != nil {
+			return fmt.Errorf("hash_roundtrip_sequential sample %d warmup: %w", sample, err)
+		}
+		elapsed, err := measure(func() error { return hashRoundtripSequential(ctx, client, hashKey, values.iterations) })
+		if err != nil {
+			return fmt.Errorf("hash_roundtrip_sequential sample %d: %w", sample, err)
+		}
+		if err := emit(values, "hash_roundtrip_sequential", sample, values.iterations, 2*values.iterations, 2*values.iterations, elapsed); err != nil {
+			return fmt.Errorf("write hash_roundtrip_sequential result: %w", err)
+		}
+	}
+
+	for sample := uint64(1); sample <= values.samples; sample++ {
+		if err := setGetPipeline(ctx, client, setGetPipeKey, values.warmup, values.pipelineBatch); err != nil {
+			return fmt.Errorf("set_get_pipeline sample %d warmup: %w", sample, err)
+		}
+		elapsed, err := measure(func() error { return setGetPipeline(ctx, client, setGetPipeKey, values.iterations, values.pipelineBatch) })
+		if err != nil {
+			return fmt.Errorf("set_get_pipeline sample %d: %w", sample, err)
+		}
+		if err := emit(values, "set_get_pipeline", sample, values.iterations, 2*values.iterations, roundTrips, elapsed); err != nil {
+			return fmt.Errorf("write set_get_pipeline result: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -547,6 +689,14 @@ func main() {
 	markerKey := values.keyPrefix + ":lease"
 	setKey := values.keyPrefix + ":set-get"
 	incrKey := values.keyPrefix + ":incr"
+	msetKeys := []string{
+		values.keyPrefix + ":mset:0",
+		values.keyPrefix + ":mset:1",
+		values.keyPrefix + ":mset:2",
+		values.keyPrefix + ":mset:3",
+	}
+	hashKey := values.keyPrefix + ":hash"
+	setGetPipeKey := values.keyPrefix + ":sg-pipe"
 	client := newClient(values)
 	redisVersion, primaryErr := readRedisVersion(ctx, client)
 	values.redisVersion = redisVersion
@@ -558,7 +708,7 @@ func main() {
 		primaryErr = errors.New("key-prefix lease already exists; supply an exclusive --key-prefix")
 	}
 	if primaryErr == nil {
-		primaryErr = run(ctx, values, client, setKey, incrKey)
+		primaryErr = run(ctx, values, client, setKey, incrKey, msetKeys, hashKey, setGetPipeKey)
 	}
 	closeErr := client.Close()
 	if primaryErr == nil && closeErr != nil {
@@ -567,7 +717,10 @@ func main() {
 
 	var cleanupErr error
 	if acquired {
-		cleanupErr = cleanup(ctx, values, markerKey, setKey, incrKey)
+		cleanupKeys := []string{markerKey, setKey, incrKey}
+		cleanupKeys = append(cleanupKeys, msetKeys...)
+		cleanupKeys = append(cleanupKeys, hashKey, setGetPipeKey)
+		cleanupErr = cleanup(ctx, values, cleanupKeys...)
 	}
 	if primaryErr != nil {
 		if cleanupErr != nil {

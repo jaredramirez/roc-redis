@@ -182,6 +182,9 @@ run in this fixed order, with samples numbered from one:
 | `set_get_sequential` | `SET key payload PX 86400001`, then `GET` and byte-compare | `2 * iterations` | `2 * iterations` |
 | `incr_sequential` | `INCR key` and validate the exact counter | `iterations` | `iterations` |
 | `ping_pipeline` | Send and validate `iterations` PINGs in bounded pipelines | `iterations` | `ceil(iterations / pipeline-batch)` |
+| `mset_mget_sequential` | `MSET` four keys to the payload, then `MGET` all four and validate each | `2 * iterations` | `2 * iterations` |
+| `hash_roundtrip_sequential` | `HSET` a three-field hash to the payload, then `HGETALL` and validate the fields | `2 * iterations` | `2 * iterations` |
+| `set_get_pipeline` | `iterations` `SET`+`GET` pairs in bounded pipelines, validating each `GET` | `2 * iterations` | `ceil(iterations / pipeline-batch)` |
 
 The 32-byte binary payload, written here as hexadecimal, is identical in every
 subject:

@@ -175,14 +175,27 @@ static int set_key(redisContext *c, const char *key, const void *value,
 }
 
 static int workload(redisContext *c, unsigned kind, uint64_t count,
-                    uint64_t batch, const char *setkey, const char *incrkey) {
+                    uint64_t batch, const char *setkey, const char *incrkey,
+                    const char *const *msetkeys, const char *hashkey,
+                    const char *sgpipekey) {
   const char *ping[] = {"PING"};
   for (uint64_t done = 0; done < count;) {
-    uint64_t current =
-        kind == 3 ? (batch < count - done ? batch : count - done) : 1;
+    uint64_t current = (kind == 3 || kind == 6)
+                           ? (batch < count - done ? batch : count - done)
+                           : 1;
     if (kind == 3) {
       for (uint64_t i = 0; i < current; ++i)
         if (redisAppendCommandArgv(c, 1, ping, NULL) != REDIS_OK)
+          return failure("pipeline append failed");
+    } else if (kind == 6) {
+      const char *setargs[] = {"SET", sgpipekey, (const char *)payload, "PX",
+                               "86400001"};
+      size_t setlens[] = {3, strlen(sgpipekey), sizeof(payload), 2, 8};
+      const char *getargs[] = {"GET", sgpipekey};
+      size_t getlens[] = {3, strlen(sgpipekey)};
+      for (uint64_t i = 0; i < current; ++i)
+        if (redisAppendCommandArgv(c, 5, setargs, setlens) != REDIS_OK ||
+            redisAppendCommandArgv(c, 2, getargs, getlens) != REDIS_OK)
           return failure("pipeline append failed");
     }
     for (uint64_t i = 0; i < current; ++i) {
@@ -202,12 +215,68 @@ static int workload(redisContext *c, unsigned kind, uint64_t count,
         reply = command(c, 2, args);
         okay = reply && reply->type == REDIS_REPLY_INTEGER &&
                reply->integer == (long long)(done + 1);
-      } else {
+      } else if (kind == 3) {
         void *received = NULL;
         if (redisGetReply(c, &received) != REDIS_OK)
           return failure("pipeline read failed");
         reply = received;
         okay = text_reply(reply, REDIS_REPLY_STATUS, "PONG", 4);
+      } else if (kind == 4) {
+        const char *msetargs[9] = {"MSET"};
+        size_t msetlens[9] = {4};
+        for (int k = 0; k < 4; ++k) {
+          msetargs[1 + 2 * k] = msetkeys[k];
+          msetlens[1 + 2 * k] = strlen(msetkeys[k]);
+          msetargs[2 + 2 * k] = (const char *)payload;
+          msetlens[2 + 2 * k] = sizeof(payload);
+        }
+        redisReply *mset = redisCommandArgv(c, 9, msetargs, msetlens);
+        int mset_okay = text_reply(mset, REDIS_REPLY_STATUS, "OK", 2);
+        freeReplyObject(mset);
+        const char *mgetargs[5] = {"MGET"};
+        size_t mgetlens[5] = {4};
+        for (int k = 0; k < 4; ++k) {
+          mgetargs[1 + k] = msetkeys[k];
+          mgetlens[1 + k] = strlen(msetkeys[k]);
+        }
+        reply = redisCommandArgv(c, 5, mgetargs, mgetlens);
+        okay = mset_okay && reply && reply->type == REDIS_REPLY_ARRAY &&
+               reply->elements == 4;
+        for (size_t k = 0; okay && k < 4; ++k)
+          okay = text_reply(reply->element[k], REDIS_REPLY_STRING, payload,
+                            sizeof(payload));
+      } else if (kind == 5) {
+        const char *hsetargs[] = {"HSET",    hashkey,
+                                  "field:0", (const char *)payload,
+                                  "field:1", (const char *)payload,
+                                  "field:2", (const char *)payload};
+        size_t hsetlens[] = {4, strlen(hashkey),  7, sizeof(payload),
+                             7, sizeof(payload),   7, sizeof(payload)};
+        redisReply *hset = redisCommandArgv(c, 8, hsetargs, hsetlens);
+        int hset_okay =
+            hset && hset->type == REDIS_REPLY_INTEGER && hset->integer >= 0;
+        freeReplyObject(hset);
+        const char *hgetargs[] = {"HGETALL", hashkey};
+        size_t hgetlens[] = {7, strlen(hashkey)};
+        reply = redisCommandArgv(c, 2, hgetargs, hgetlens);
+        okay = hset_okay && reply && reply->type == REDIS_REPLY_ARRAY &&
+               reply->elements == 6;
+        for (size_t k = 1; okay && k < 6; k += 2)
+          okay = text_reply(reply->element[k], REDIS_REPLY_STRING, payload,
+                            sizeof(payload));
+      } else {
+        void *set_received = NULL;
+        if (redisGetReply(c, &set_received) != REDIS_OK)
+          return failure("pipeline read failed");
+        redisReply *set_reply = set_received;
+        int set_okay = text_reply(set_reply, REDIS_REPLY_STATUS, "OK", 2);
+        freeReplyObject(set_reply);
+        void *get_received = NULL;
+        if (redisGetReply(c, &get_received) != REDIS_OK)
+          return failure("pipeline read failed");
+        reply = get_received;
+        okay = set_okay &&
+               text_reply(reply, REDIS_REPLY_STRING, payload, sizeof(payload));
       }
       freeReplyObject(reply);
       if (!okay)
@@ -228,7 +297,9 @@ static int now_ns(uint64_t *out) {
 }
 
 static int run(const Config *config, redisContext *c, const char *version,
-               const char *setkey, const char *incrkey) {
+               const char *setkey, const char *incrkey,
+               const char *const *msetkeys, const char *hashkey,
+               const char *sgpipekey) {
   const char *hello[] = {"HELLO", "2"};
   redisReply *hello_reply = command(c, 2, hello);
   int resp2 = hello_reply && hello_reply->type == REDIS_REPLY_ARRAY;
@@ -254,28 +325,34 @@ static int run(const Config *config, redisContext *c, const char *version,
   freeReplyObject(pipelined);
   if (!same)
     return failure("pipeline changed connection");
-  const char *names[] = {"ping_sequential", "set_get_sequential",
-                         "incr_sequential", "ping_pipeline"};
-  for (unsigned kind = 0; kind < 4; ++kind) {
+  const char *names[] = {"ping_sequential",       "set_get_sequential",
+                         "incr_sequential",       "ping_pipeline",
+                         "mset_mget_sequential",  "hash_roundtrip_sequential",
+                         "set_get_pipeline"};
+  for (unsigned kind = 0; kind < 7; ++kind) {
     for (uint64_t sample = 1; sample <= config->samples; ++sample) {
       if (kind == 2 && !set_key(c, incrkey, "0", 1, 0))
         return failure("counter initialization failed");
-      if (!workload(c, kind, config->warmup, config->batch, setkey, incrkey))
+      if (!workload(c, kind, config->warmup, config->batch, setkey, incrkey,
+                    msetkeys, hashkey, sgpipekey))
         return 0;
       if (kind == 2 && !set_key(c, incrkey, "0", 1, 0))
         return failure("counter reset failed");
       uint64_t start, end;
       if (!now_ns(&start) ||
-          !workload(c, kind, config->iterations, config->batch, setkey,
-                    incrkey) ||
+          !workload(c, kind, config->iterations, config->batch, setkey, incrkey,
+                    msetkeys, hashkey, sgpipekey) ||
           !now_ns(&end))
         return 0;
       if (end < start)
         return failure("monotonic clock moved backwards");
-      uint64_t commands = config->iterations * (kind == 1 ? 2 : 1);
+      uint64_t commands =
+          config->iterations *
+          ((kind == 1 || kind == 4 || kind == 5 || kind == 6) ? 2 : 1);
       uint64_t trips =
-          kind == 3 ? (config->iterations + config->batch - 1) / config->batch
-                    : commands;
+          (kind == 3 || kind == 6)
+              ? (config->iterations + config->batch - 1) / config->batch
+              : commands;
       // Every interpolated string has been restricted to safe ASCII;
       // no payload or arbitrary server text enters this JSON emitter.
       if (printf(
@@ -348,9 +425,18 @@ int main(int argc, char **argv) {
     config.prefix = generated;
   }
   char lease[160], setkey[160], incrkey[160], version[129];
+  char mset0[160], mset1[160], mset2[160], mset3[160], hashkey[160],
+      sgpipekey[160];
   snprintf(lease, sizeof(lease), "%s:lease", config.prefix);
   snprintf(setkey, sizeof(setkey), "%s:set-get", config.prefix);
   snprintf(incrkey, sizeof(incrkey), "%s:incr", config.prefix);
+  snprintf(mset0, sizeof(mset0), "%s:mset:0", config.prefix);
+  snprintf(mset1, sizeof(mset1), "%s:mset:1", config.prefix);
+  snprintf(mset2, sizeof(mset2), "%s:mset:2", config.prefix);
+  snprintf(mset3, sizeof(mset3), "%s:mset:3", config.prefix);
+  snprintf(hashkey, sizeof(hashkey), "%s:hash", config.prefix);
+  snprintf(sgpipekey, sizeof(sgpipekey), "%s:sg-pipe", config.prefix);
+  const char *msetkeys[4] = {mset0, mset1, mset2, mset3};
   redisContext *c = connect_redis(&config);
   if (!c)
     return 1;
@@ -361,15 +447,17 @@ int main(int argc, char **argv) {
     redisFree(c);
     return 1;
   }
-  int okay = run(&config, c, version, setkey, incrkey);
+  int okay =
+      run(&config, c, version, setkey, incrkey, msetkeys, hashkey, sgpipekey);
   redisFree(c);
   c = connect_redis(&config);
   if (!c)
     return 1;
-  const char *args[] = {"DEL", setkey, incrkey, lease};
-  redisReply *reply = command(c, 4, args);
+  const char *args[] = {"DEL",  setkey, incrkey,   lease,     mset0,
+                        mset1,  mset2,  mset3,     hashkey,   sgpipekey};
+  redisReply *reply = command(c, 10, args);
   if (!reply || reply->type != REDIS_REPLY_INTEGER || reply->integer < 0 ||
-      reply->integer > 3) {
+      reply->integer > 9) {
     failure("cleanup failed; leased keys retain their expiry");
     okay = 0;
   }

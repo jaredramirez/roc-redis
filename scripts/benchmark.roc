@@ -90,7 +90,7 @@ schema : Str
 schema = "roc-redis-benchmark/v2"
 
 workloads : List(Str)
-workloads = ["ping_sequential", "set_get_sequential", "incr_sequential", "ping_pipeline"]
+workloads = ["ping_sequential", "set_get_sequential", "incr_sequential", "ping_pipeline", "mset_mget_sequential", "hash_roundtrip_sequential", "set_get_pipeline"]
 
 default_config : Config
 default_config = {
@@ -782,11 +782,11 @@ validate_record_sequence = |subject, remaining, config, redis_version, provenanc
 			workload_index = index / config.samples
 			expected_workload = workloads.get(workload_index) ? |_| BenchmarkFailed("internal workload index ${workload_index.to_str()} is out of range")
 			expected_sample = (index % config.samples) + 1
-			expected_commands = if expected_workload == "set_get_sequential" config.iterations * 2 else config.iterations
+			expected_commands = if ["set_get_sequential", "mset_mget_sequential", "hash_roundtrip_sequential", "set_get_pipeline"].contains(expected_workload) config.iterations * 2 else config.iterations
 			expected_round_trips =
-				if expected_workload == "set_get_sequential" {
+				if ["set_get_sequential", "mset_mget_sequential", "hash_roundtrip_sequential"].contains(expected_workload) {
 					config.iterations * 2
-				} else if expected_workload == "ping_pipeline" {
+				} else if ["ping_pipeline", "set_get_pipeline"].contains(expected_workload) {
 					ceiling_divide(config.iterations, config.pipeline_batch)
 				} else {
 					config.iterations
@@ -868,7 +868,8 @@ finish_results! = |runs, config, redis_version, subject_catalog, rotation_count|
 	Stdout.line!("Isolated Redis ${redis_version} benchmark: ${config.iterations.to_str()} measured operations/sample, ${config.warmup.to_str()} warmup, ${total_samples.to_str()} samples across ${rotation_count.to_str()} order rotation(s)") ? |error| BenchmarkFailed("write benchmark heading: ${Str.inspect(error)}")
 	Stdout.line!("client | timer | workload | median time | operations/s | Redis commands/s") ? |error| BenchmarkFailed("write benchmark heading: ${Str.inspect(error)}")
 	Stdout.line!("--- | --- | --- | ---: | ---: | ---:") ? |error| BenchmarkFailed("write benchmark heading: ${Str.inspect(error)}")
-	print_subject_summaries!(runs, subject_catalog, rotation_count)
+	{} = print_subject_summaries!(runs, subject_catalog, rotation_count)?
+	print_markdown_table!(runs, subject_catalog)
 }
 
 count_run_records : List(SubjectRun) -> U64
@@ -942,6 +943,51 @@ print_workload_summaries! = |run, remaining|
 			print_workload_summaries!(run, rest)
 		}
 	}
+
+## Emit a README-ready table: one row per experiment, one column per client,
+## each cell the median operations/second. Reuses the same median and
+## rate_per_second policy as the per-workload summary above.
+print_markdown_table! : List(SubjectRun), List(Subject) => Try({}, [BenchmarkFailed(Str), ..])
+print_markdown_table! = |runs, subjects| {
+	labels = subjects.map(|subject| subject.label)
+	{} = Stdout.line!("") ? |error| BenchmarkFailed("write markdown blank line: ${Str.inspect(error)}")
+	{} = Stdout.line!("Operations/second (median) — rows are experiments, columns are clients:") ? |error| BenchmarkFailed("write markdown caption: ${Str.inspect(error)}")
+	{} = Stdout.line!("") ? |error| BenchmarkFailed("write markdown blank line: ${Str.inspect(error)}")
+	{} = Stdout.line!("| Experiment | ${Str.join_with(labels, " | ")} |") ? |error| BenchmarkFailed("write markdown header: ${Str.inspect(error)}")
+	{} = Stdout.line!("| --- | ${Str.join_with(labels.map(|_label| "---:"), " | ")} |") ? |error| BenchmarkFailed("write markdown separator: ${Str.inspect(error)}")
+	print_markdown_rows!(runs, subjects, workloads)
+}
+
+print_markdown_rows! : List(SubjectRun), List(Subject), List(Str) => Try({}, [BenchmarkFailed(Str), ..])
+print_markdown_rows! = |runs, subjects, remaining|
+	match remaining {
+		[] => Ok({})
+		[workload, .. as rest] => {
+			row = markdown_row(runs, subjects, workload, "| ${workload} |") ? |message| BenchmarkFailed(message)
+			{} = Stdout.line!(row) ? |error| BenchmarkFailed("write markdown row: ${Str.inspect(error)}")
+			print_markdown_rows!(runs, subjects, rest)
+		}
+	}
+
+markdown_row : List(SubjectRun), List(Subject), Str, Str -> Try(Str, Str)
+markdown_row = |runs, subjects, workload, acc|
+	match subjects {
+		[] => Ok(acc)
+		[subject, .. as rest] => {
+			cell = markdown_cell(runs, subject, workload)?
+			markdown_row(runs, rest, workload, "${acc} ${cell} |")
+		}
+	}
+
+markdown_cell : List(SubjectRun), Subject, Str -> Try(Str, Str)
+markdown_cell = |runs, subject, workload| {
+	matching = runs.keep_if(|run| run.implementation == subject.implementation)
+	records = collect_run_records(matching).keep_if(|record| record.workload == workload)
+	first = records.first() ? |_| "no ${workload} records for ${subject.label}"
+	median_ns = median(records.map(|record| record.elapsed_ns))?
+	operations_per_second = rate_per_second(first.operation_count, median_ns)?
+	Ok(operations_per_second.to_str())
+}
 
 median : List(U64) -> Try(U64, Str)
 median = |values| {
