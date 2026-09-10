@@ -36,9 +36,31 @@ release should link the exact source revision and identify the pinned compiler.
    message drafted in [COMMUNITY-FEEDBACK.md](COMMUNITY-FEEDBACK.md).
 
 The repository is public at `https://github.com/jaredramirez/roc-redis`.
-The maintainer approved preparing and publishing `0.1.0-rc1` on September 9.
-Publication checks are recorded below. Do not replace the RC asset in place;
-publish another version if package contents change.
+The maintainer approved preparing and publishing `0.1.0-rc1` on September 9 and
+`0.1.0-rc2` on September 10. Publication checks are recorded below. Do not
+replace an RC asset in place; publish another version if package contents change.
+
+## 0.1.0-rc2 publication (September 10)
+
+- [Release](https://github.com/jaredramirez/roc-redis/releases/tag/0.1.0-rc2),
+  source `a4867e14d3eab43a8ea9ca59addf431493e78406`.
+- The exact-revision [Linux/macOS CI run](https://github.com/jaredramirez/roc-redis/actions/runs/34536778591)
+  passed before the URL was published in the installation example.
+- Published archive: `xob6JGzB3sHAE31nHg8acAASiRJtWecX5j43fuweP7J.tar.zst`.
+  SHA-256: `3c11f6aa6afcc664ae6886db6a83a6d55bb9d01828344cd6661bc279dc963efb`.
+  A checksum sidecar is attached to the release; bundled LICENSE and NOTICE were
+  compared with the repository copies and are byte-for-byte identical.
+- On Apple Silicon macOS, the no-server `INSTALL.md` app was copied to a fresh
+  temporary directory and checked, built (dev), and run with the raw pinned
+  compiler `nightly-2026-09-07-14d9829`, fresh `XDG_CACHE_HOME` and
+  `ROC_CACHE_DIR`, and the actual public release URL — not the project
+  cache-seeding wrapper or a local package dependency. It downloaded basic-cli
+  0.23.0-rc1 and the rc2 archive from their public URLs, checked and built with
+  zero errors and warnings, and printed the GET command's parts.
+- rc2 supersedes rc1 because the package contents changed: the ergonomic
+  connection API (`Client`/`Transport`/handshake/`attach`/disposition),
+  refinement-typed `Config`, and the `Connect`->`Session` command-family rename.
+  The rc1 release asset remains published and unmodified.
 
 ## 0.1.0-rc1 publication (September 9)
 

@@ -15,7 +15,7 @@ by default; speed and size remain experimental. The API is open to feedback.
 
 ## Get started
 
-The example below targets **0.1.0-rc1** and the pinned Roc nightly above.
+The example below targets **0.1.0-rc2** and the pinned Roc nightly above.
 Save it as `main.roc`. With Roc and Redis available (the checkout's
 `nix develop` supplies both), start disposable Redis in a separate terminal:
 
@@ -29,7 +29,7 @@ and saves it for 60 seconds:
 ```roc
 app [main!] {
 	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.23.0-rc1/3hT3SoHZ6qbEsa9qVFLUW3547U5LeoNd1KbpqLpz4r1i.tar.zst",
-	redis: "https://github.com/jaredramirez/roc-redis/releases/download/0.1.0-rc1/D8HziVQtZBUBer5ASdLDqwsFwXwZ2pV5XNQ9C21urvTZ.tar.zst",
+	redis: "https://github.com/jaredramirez/roc-redis/releases/download/0.1.0-rc2/xob6JGzB3sHAE31nHg8acAASiRJtWecX5j43fuweP7J.tar.zst",
 }
 
 import pf.Tcp

@@ -1,4 +1,4 @@
-# Trying 0.1.0-rc1
+# Trying 0.1.0-rc2
 
 Use the release's exact content-addressed archive URL with Roc
 `nightly-2026-09-07-14d9829`. The dev backend is recommended.
@@ -19,7 +19,7 @@ This complete application needs no Redis server. Save it as `main.roc` and run
 ```roc
 app [main!] {
     pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.23.0-rc1/3hT3SoHZ6qbEsa9qVFLUW3547U5LeoNd1KbpqLpz4r1i.tar.zst",
-	redis: "https://github.com/jaredramirez/roc-redis/releases/download/0.1.0-rc1/D8HziVQtZBUBer5ASdLDqwsFwXwZ2pV5XNQ9C21urvTZ.tar.zst",
+	redis: "https://github.com/jaredramirez/roc-redis/releases/download/0.1.0-rc2/xob6JGzB3sHAE31nHg8acAASiRJtWecX5j43fuweP7J.tar.zst",
 }
 
 import pf.Stdout
