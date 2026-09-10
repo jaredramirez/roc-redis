@@ -1,46 +1,60 @@
 # Benchmark chart provenance
 
-The README now shows a markdown table that the benchmark controller prints
-directly (`just benchmark` / `just benchmark-all`; rows are experiments, columns
-are clients). The archived figures below come from the
-[September 7 tuned campaign](../benchmarks/results/2026-09-07-tuning-final-speed-quiet.jsonl)
-and cover only the original four workloads; the three realistic workloads
-(`mset_mget`, `hash_roundtrip`, `set_get_pipeline`) need a fresh campaign.
+The README table is printed directly by the benchmark controller
+(`just benchmark-all`; rows are experiments, columns are clients). The current
+figures come from a position-balanced campaign taken on this checkout on
+2026-09-10 (`../benchmarks/results/2026-09-10-seven-workload-speed-quiet.jsonl`),
+covering all seven workloads.
 
-Throughput is 5,000 operations divided by median elapsed time across 30 validated
-samples per client/workload. Labels truncate to whole operations/second, matching
-the historical report; bars use unrounded values. Each panel has its own
-zero-based scale.
+Throughput is 10,000 operations divided by median elapsed time across 50
+validated samples per client/workload (five samples in each of ten
+position-balanced subject orders). Labels truncate to whole operations/second.
+Each `SET+GET`, `MSET/MGET`, hash roundtrip, and pipelined pair counts as one
+operation.
 
-| Client | PING/s | SET+GET/s | INCR/s | Pipelined PING/s |
-| --- | ---: | ---: | ---: | ---: |
-| Roc · speed | 14,694 | 7,252 | 14,657 | 972,006 |
-| Python | 12,488 | 5,958 | 12,425 | 357,869 |
-| Go | 13,619 | 6,765 | 13,680 | 1,010,951 |
-| Rust | 14,593 | 7,283 | 14,530 | 1,148,545 |
-| C | 14,506 | 7,313 | 14,528 | 1,147,183 |
+| Experiment | roc-redis | redis-py | go-redis | redis-rs | hiredis |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `ping_sequential` | 15,024 | 12,537 | 13,896 | 14,981 | 14,960 |
+| `set_get_sequential` | 7,458 | 6,091 | 6,950 | 7,400 | 7,392 |
+| `incr_sequential` | 14,874 | 12,548 | 13,892 | 14,814 | 14,787 |
+| `ping_pipeline` | 957,579 | 352,223 | 1,075,811 | 1,225,787 | 1,218,100 |
+| `mset_mget_sequential` | 7,242 | 5,751 | 6,910 | 7,406 | 7,462 |
+| `hash_roundtrip_sequential` | 7,291 | 5,987 | 6,937 | 7,385 | 7,375 |
+| `set_get_pipeline` | 459,252 | 117,322 | 456,467 | 468,426 | 577,383 |
 
 Redis 8.10.1; aarch64-darwin; persistent loopback TCP; RESP2; 32-byte binary
-values; 500 warmup operations; 5,000 measured operations/sample. Three samples
-in each of ten position-balanced orders give 600 records. SET+GET is two
-commands but one operation; pipelines hold 100 PINGs. Compilation, setup,
-warmup, and cleanup are outside the timed regions.
+values; 1,000 warmup operations; 10,000 measured operations/sample. Five samples
+in each of ten position-balanced orders give 1,750 records per campaign. SET+GET
+is two commands but one operation; pipelines hold up to 100 operations.
+Compilation, setup, warmup, and cleanup are outside the timed regions.
 
-Roc uses the September 7 nightly, experimental speed backend, and basic-cli
-0.22.2. Comparators are redis-py 8.1.0 (pure Python parser), go-redis 9.22.0,
-redis-rs 1.6.0, and hiredis 1.4.1. Roc uses a UTC wall-clock timer; others use
-monotonic timers. These are descriptive medians, not confidence intervals.
+Roc uses the pinned `nightly-2026-09-07-14d9829`, the experimental speed backend,
+and basic-cli 0.23.0-rc1. Comparators are redis-py 8.1.0 (pure Python parser),
+go-redis 9.22.0, redis-rs 1.6.0, and hiredis 1.4.1. Roc uses a UTC wall-clock
+timer; others use monotonic timers. These are descriptive medians, not
+confidence intervals.
 
-This source predates subsequent decoder changes, readability edits, and the CLI
-upgrade. Do not interpret close results as significant differences or this
-campaign as a current-checkout measurement or general language ranking.
+The community-preview default is the dev backend, not speed. A dev-backend
+cross-check with identical parameters
+(`../benchmarks/results/2026-09-10-seven-workload-quiet.jsonl`) stays within a
+few percent on the sequential rows (`ping_sequential` 14,651 vs 15,024) and runs
+about 2.5–3× lower on the pipelined rows (`ping_pipeline` 395,890 vs 957,579;
+`set_get_pipeline` 152,413 vs 459,252). Sequential workloads are network
+round-trip bound, so the backend barely moves them; pipelines expose client-side
+CPU.
 
-[Full historical report](history/performance.md#live-redis-all-five-clients) ·
+Do not interpret close results as significant differences, this campaign as a
+general language ranking, or these medians as confidence intervals. Numbers were
+taken on one quiet host.
+
+[Historical September 7 report](history/performance.md#live-redis-all-five-clients) ·
 [Workloads and reproduction](../benchmarks/README.md) ·
-[Newer memory/decoder measurements](../perf.md)
+[Memory/decoder measurements](../perf.md)
 
-To refresh the README, run `just benchmark` (or `just benchmark-all`) on an
-isolated host and paste the controller's printed table; it computes throughput
-with the same median-of-samples policy. Retain the raw JSONL (`--jsonl`) and
-source provenance; never pool different campaigns or relabel historical results
-as current.
+To refresh the README, run `just benchmark-all` on an isolated host and paste the
+controller's printed table; it computes throughput with the same
+median-of-samples policy. The live subjects build Roc on dev by default; select
+the experimental speed backend with an isolated flake copy setting
+`benchmarkBuildMode = "speed"` (see [benchmarks/README.md](../benchmarks/README.md)).
+Retain the raw JSONL (`--jsonl`) and source provenance; never pool different
+campaigns or relabel historical results as current.

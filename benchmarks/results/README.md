@@ -19,6 +19,8 @@ performance reports. Do not pool campaigns across compilers, variants, or worklo
 | Balanced-buffer refinement | September 7 / speed, before/new/new/before per case | [Initial balance, 120](2026-09-08-balanced-decode-abba.jsonl), [final bounded-prefix balance, 120](2026-09-08-balanced-prefix-decode-abba.jsonl) |
 | Final full memory suite | September 7 / bounded-prefix balance and corrected batch model | [Dev, 42](2026-09-08-balanced-prefix-memory-dev-full.jsonl), [speed, 42](2026-09-08-balanced-prefix-memory-speed-full.jsonl) |
 | Batch capture correction | September 7 / matched speed probe comparison | [4 single-case RSS observations](2026-09-08-batch-capture-correction.jsonl) |
+| Seven-workload README source | September 10 / speed | [Live, 1750](2026-09-10-seven-workload-speed-quiet.jsonl) |
+| Seven-workload dev cross-check | September 10 / dev | [Live, 1750](2026-09-10-seven-workload-quiet.jsonl) |
 
 Counts are JSONL records/events. The September 7 filenames identify measurement
 dates, not necessarily compiler dates. Every timed record includes variant and

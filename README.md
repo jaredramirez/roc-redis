@@ -109,20 +109,22 @@ operation; pipelines hold up to 100 operations.
 
 | Experiment | roc-redis | redis-py | go-redis | redis-rs | hiredis |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `ping_sequential` | 14,694 | 12,488 | 13,619 | 14,593 | 14,506 |
-| `set_get_sequential` | 7,252 | 5,958 | 6,765 | 7,283 | 7,313 |
-| `incr_sequential` | 14,657 | 12,425 | 13,680 | 14,530 | 14,528 |
-| `ping_pipeline` | 972,006 | 357,869 | 1,010,951 | 1,148,545 | 1,147,183 |
-| `mset_mget_sequential` | — | — | — | — | — |
-| `hash_roundtrip_sequential` | — | — | — | — | — |
-| `set_get_pipeline` | — | — | — | — | — |
+| `ping_sequential` | 15,024 | 12,537 | 13,896 | 14,981 | 14,960 |
+| `set_get_sequential` | 7,458 | 6,091 | 6,950 | 7,400 | 7,392 |
+| `incr_sequential` | 14,874 | 12,548 | 13,892 | 14,814 | 14,787 |
+| `ping_pipeline` | 957,579 | 352,223 | 1,075,811 | 1,225,787 | 1,218,100 |
+| `mset_mget_sequential` | 7,242 | 5,751 | 6,910 | 7,406 | 7,462 |
+| `hash_roundtrip_sequential` | 7,291 | 5,987 | 6,937 | 7,385 | 7,375 |
+| `set_get_pipeline` | 459,252 | 117,322 | 456,467 | 468,426 | 577,383 |
 
-The first four rows are the archived September 7 campaign (Redis 8.10.1 over
-loopback on Apple Silicon; Roc on the experimental speed backend, basic-cli
-0.22.2). They predate the current checkout and are not a language ranking. The
-three realistic workloads are pending a fresh run. Regenerate all seven on an
-isolated host with `just benchmark` (or `just benchmark-all`) — the controller
-prints this exact table.
+All seven rows come from one position-balanced campaign on this checkout
+(2026-09-10; Redis 8.10.1 over loopback on aarch64-darwin; 50 validated samples
+of 10,000 operations per client and workload). Roc uses the experimental speed
+backend here; on the recommended dev default it stays within a few percent on
+the sequential rows and runs roughly 2.5–3× lower on the pipelined ones. These
+are descriptive medians on one quiet host, not a language ranking. Regenerate
+all seven with `just benchmark-all` (the controller prints this exact table);
+see the provenance below for exact pins and the dev-backend cross-check.
 
 [Chart provenance and exact values](docs/benchmark-chart.md) ·
 [Workloads and reproduction](benchmarks/README.md) ·
