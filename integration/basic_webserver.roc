@@ -19,9 +19,10 @@ import pf.Tcp
 import http.Response
 import redis.Batch
 import redis.Bytes
+import redis.Client
 import redis.Commands
 import redis.Config
-import redis.Connection
+import redis.Transport
 
 Context : {
 	redis_host : Str,
@@ -30,7 +31,9 @@ Context : {
 
 program = { init!, respond!, shutdown! }
 
-Ok(redis_config) = Config.default |> Config.build
+redis_config = Config.default |> Config.build
+
+client = Client.new(redis_config)
 
 init! : () => Try(
 	{ config : Server.Config, context : Context },
@@ -51,21 +54,19 @@ respond! = |request, context| {
 	target = request_target_to_str(request.target())
 		? |message| ServerErr(message)
 	target_bytes = target.to_utf8()
-	echo = Commands.Connect.echo(Bytes.from_list(target_bytes))
+	echo = Commands.Session.echo(Bytes.from_list(target_bytes))
 
 	stream = Tcp.connect!(context.redis_host, context.redis_port)
 		? |error| ServerErr("connect to Redis: ${Tcp.connect_err_to_str(error)}")
 
-	connection : Connection(_, _)
-	connection = {
-		config: redis_config,
-		read!: |max_bytes|
-			stream.read_up_to!(max_bytes)
-				.map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
+	transport = Transport.from_bytes_io({
+		read_bytes!: |max_bytes| stream.read_up_to!(max_bytes),
 		write_all!: |bytes| stream.write!(bytes),
-	}
+	})
+	connection = client.connect!(transport)
+		? |error| ServerErr("Redis handshake: ${Str.inspect(error)}")
 
-	result = connection.batch!(Batch.all([Commands.Connect.ping(), echo]))
+	result = connection.batch!(Batch.all([Commands.Session.ping(), echo]))
 		? |error| ServerErr("Redis pipeline: ${Str.inspect(error)}")
 
 	expected = [Bytes.from_str("PONG"), Bytes.from_list(target_bytes)]

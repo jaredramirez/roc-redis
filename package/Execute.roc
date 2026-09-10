@@ -88,7 +88,40 @@ Execute :: [].{
 			write_all!(encoded).map_err(|error| WriteFailed(error))
 		}
 	}
+
+	## Whether the connection is safe to reuse after a failure, or must be
+	## discarded. Only a transport failure (ExchangeFailed) corrupts framing;
+	## a validation rejection never wrote anything, and server/decoder errors
+	## follow a complete, framed reply. See the ExchangeError/Error invariants
+	## above. Pooling adapters map this onto their reuse/discard decision.
+	Disposition : [Reuse, Discard]
+
+	disposition : Error(read_err, write_err, decode_err) -> Disposition
+	disposition = |error| match error {
+		ExchangeFailed(_) => Discard
+		RequestRejected(_) => Reuse
+		ServerError(_) => Reuse
+		ReplyDecodeFailure(_) => Reuse
+	}
+
+	## Same rule for batch! outcomes: discard only on a transport failure. The
+	## complete wire batch is drained before any decoder runs, so decode and
+	## count failures leave framing aligned.
+	batch_disposition : [RequestRejected(ValidationError), ExchangeFailed(ExchangeError(read_err, write_err)), BatchDecodeFailure(decode_err), ReplyCountMismatch({ expected : U64, actual : U64 })] -> Disposition
+	batch_disposition = |error| match error {
+		ExchangeFailed(_) => Discard
+		RequestRejected(_) => Reuse
+		BatchDecodeFailure(_) => Reuse
+		ReplyCountMismatch(_) => Reuse
+	}
 }
+
+expect Execute.disposition(ExchangeFailed(EmptyData)) == Discard
+expect Execute.disposition(RequestRejected(RequestByteLimitExceeded({ limit: 16 }))) == Reuse
+expect Execute.disposition(ServerError(Bytes.from_str("WRONGTYPE"))) == Reuse
+expect Execute.disposition(ReplyDecodeFailure(NotInteger)) == Reuse
+expect Execute.batch_disposition(ExchangeFailed(WriteFailed(Timeout))) == Discard
+expect Execute.batch_disposition(ReplyCountMismatch({ expected: 2, actual: 1 })) == Reuse
 
 prepare : Config.Config, List(Command.Command) -> Try(List(U8), Execute.ValidationError)
 prepare = |config, commands|

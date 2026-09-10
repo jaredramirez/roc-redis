@@ -2,6 +2,8 @@
 ## Numeric literals are validated at compile time; runtime values use from_u64.
 Positive :: { value : U64 }.{
 	is_eq : _
+	parser_for : _
+	encoder_for : _
 
 	from_u64 : U64 -> Try(Positive, [Zero])
 	from_u64 = |value| if value == 0 {

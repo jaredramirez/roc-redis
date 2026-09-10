@@ -11,21 +11,26 @@ import pf.OsStr exposing [OsStr]
 import redis.Bytes
 import redis.Commands
 import redis.Config
-import redis.Connection
+import redis.Client
+import redis.Transport
 
-Ok(config) = Config.default |> Config.build
+config = Config.default |> Config.build
+
+client = Client.new(config)
 
 main! : List(OsStr) => Try({}, [ExampleFailed(Str), Exit(I32), ..])
 main! = |_args| {
 	stream = Tcp.connect!("127.0.0.1", 6379, 2_000)
 		? |error| ExampleFailed("connect: ${Str.inspect(error)}")
-	connection : Connection(_, _)
-	connection = {
-		config: config,
-		read!: |max_bytes| stream.read_up_to!(max_bytes, 2_000)
-			.map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
+
+	transport = Transport.from_bytes_io({
+		read_bytes!: |max_bytes| stream.read_up_to!(max_bytes, 2_000),
 		write_all!: |bytes| stream.write!(bytes, 2_000),
-	}
+	})
+
+	connection = client.connect!(transport)
+		? |_| ExampleFailed("Redis handshake failed")
+
 	stored = connection.request!(Commands.Strings.get("example:greeting"))
 		? |error| ExampleFailed("GET: ${Str.inspect(error)}")
 	greeting = match stored {

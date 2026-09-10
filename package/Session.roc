@@ -1,7 +1,7 @@
 import Command
 
 ## GENERATED FILE: do not edit directly; regenerate with `scripts/command-catalog.roc generate`.
-## Binary-safe Redis OSS 8.10.1 Connect command constructors.
+## Binary-safe Redis OSS 8.10.1 Session command constructors.
 ##
 ## Scalar wire arguments are `List(U8)`. Required variadic arguments use
 ## a first value plus a remaining list, so an empty required collection is
@@ -12,7 +12,7 @@ import Command
 ## grammar choice; Redis validates the sequence when it executes the command.
 ## Commands that change protocol, suppress replies, or close the socket are
 ## encoding-only here; `Execute.request!` assumes one RESP2 reply and a reusable connection.
-Connect := {}.{
+Session := {}.{
 
 	## Construct `AUTH`.
 	## Available since Redis 1.0.0.
@@ -231,64 +231,64 @@ Connect := {}.{
 	}
 }
 
-expect Command.encode(Connect.auth([[0, 1, 255], [0, 2, 255]], [0, 3, 255])) == ['*', '4', '\r', '\n', '$', '4', '\r', '\n', 'A', 'U', 'T', 'H', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 3, 255, '\r', '\n']
+expect Command.encode(Session.auth([[0, 1, 255], [0, 2, 255]], [0, 3, 255])) == ['*', '4', '\r', '\n', '$', '4', '\r', '\n', 'A', 'U', 'T', 'H', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 3, 255, '\r', '\n']
 
-expect Command.encode(Connect.auth([], [0, 3, 255])) == ['*', '2', '\r', '\n', '$', '4', '\r', '\n', 'A', 'U', 'T', 'H', '\r', '\n', '$', '3', '\r', '\n', 0, 3, 255, '\r', '\n']
+expect Command.encode(Session.auth([], [0, 3, 255])) == ['*', '2', '\r', '\n', '$', '4', '\r', '\n', 'A', 'U', 'T', 'H', '\r', '\n', '$', '3', '\r', '\n', 0, 3, 255, '\r', '\n']
 
-expect Command.encode(Connect.client_caching(['Y', 'E', 'S'])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'C', 'A', 'C', 'H', 'I', 'N', 'G', '\r', '\n', '$', '3', '\r', '\n', 'Y', 'E', 'S', '\r', '\n']
+expect Command.encode(Session.client_caching(['Y', 'E', 'S'])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'C', 'A', 'C', 'H', 'I', 'N', 'G', '\r', '\n', '$', '3', '\r', '\n', 'Y', 'E', 'S', '\r', '\n']
 
-expect Command.encode(Connect.client_getname({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'G', 'E', 'T', 'N', 'A', 'M', 'E', '\r', '\n']
+expect Command.encode(Session.client_getname({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'G', 'E', 'T', 'N', 'A', 'M', 'E', '\r', '\n']
 
-expect Command.encode(Connect.client_getredir({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '8', '\r', '\n', 'G', 'E', 'T', 'R', 'E', 'D', 'I', 'R', '\r', '\n']
+expect Command.encode(Session.client_getredir({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '8', '\r', '\n', 'G', 'E', 'T', 'R', 'E', 'D', 'I', 'R', '\r', '\n']
 
-expect Command.encode(Connect.client_id({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '2', '\r', '\n', 'I', 'D', '\r', '\n']
+expect Command.encode(Session.client_id({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '2', '\r', '\n', 'I', 'D', '\r', '\n']
 
-expect Command.encode(Connect.client_info({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '4', '\r', '\n', 'I', 'N', 'F', 'O', '\r', '\n']
+expect Command.encode(Session.client_info({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '4', '\r', '\n', 'I', 'N', 'F', 'O', '\r', '\n']
 
-expect Command.encode(Connect.client_kill({ first: [0, 1, 255], rest: [] })) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '4', '\r', '\n', 'K', 'I', 'L', 'L', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
+expect Command.encode(Session.client_kill({ first: [0, 1, 255], rest: [] })) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '4', '\r', '\n', 'K', 'I', 'L', 'L', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Connect.client_list([[0, 1, 255], [0, 2, 255]])) == ['*', '4', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '4', '\r', '\n', 'L', 'I', 'S', 'T', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
+expect Command.encode(Session.client_list([[0, 1, 255], [0, 2, 255]])) == ['*', '4', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '4', '\r', '\n', 'L', 'I', 'S', 'T', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 
-expect Command.encode(Connect.client_list([])) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '4', '\r', '\n', 'L', 'I', 'S', 'T', '\r', '\n']
+expect Command.encode(Session.client_list([])) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '4', '\r', '\n', 'L', 'I', 'S', 'T', '\r', '\n']
 
-expect Command.encode(Connect.client_no_evict(['O', 'N'])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '8', '\r', '\n', 'N', 'O', '-', 'E', 'V', 'I', 'C', 'T', '\r', '\n', '$', '2', '\r', '\n', 'O', 'N', '\r', '\n']
+expect Command.encode(Session.client_no_evict(['O', 'N'])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '8', '\r', '\n', 'N', 'O', '-', 'E', 'V', 'I', 'C', 'T', '\r', '\n', '$', '2', '\r', '\n', 'O', 'N', '\r', '\n']
 
-expect Command.encode(Connect.client_no_touch(['O', 'N'])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '8', '\r', '\n', 'N', 'O', '-', 'T', 'O', 'U', 'C', 'H', '\r', '\n', '$', '2', '\r', '\n', 'O', 'N', '\r', '\n']
+expect Command.encode(Session.client_no_touch(['O', 'N'])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '8', '\r', '\n', 'N', 'O', '-', 'T', 'O', 'U', 'C', 'H', '\r', '\n', '$', '2', '\r', '\n', 'O', 'N', '\r', '\n']
 
-expect Command.encode(Connect.client_pause(['1'], [[0, 2, 255], [0, 3, 255]])) == ['*', '5', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '5', '\r', '\n', 'P', 'A', 'U', 'S', 'E', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 3, 255, '\r', '\n']
+expect Command.encode(Session.client_pause(['1'], [[0, 2, 255], [0, 3, 255]])) == ['*', '5', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '5', '\r', '\n', 'P', 'A', 'U', 'S', 'E', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 3, 255, '\r', '\n']
 
-expect Command.encode(Connect.client_pause(['1'], [])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '5', '\r', '\n', 'P', 'A', 'U', 'S', 'E', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n']
+expect Command.encode(Session.client_pause(['1'], [])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '5', '\r', '\n', 'P', 'A', 'U', 'S', 'E', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n']
 
-expect Command.encode(Connect.client_reply(['O', 'N'])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '5', '\r', '\n', 'R', 'E', 'P', 'L', 'Y', '\r', '\n', '$', '2', '\r', '\n', 'O', 'N', '\r', '\n']
+expect Command.encode(Session.client_reply(['O', 'N'])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '5', '\r', '\n', 'R', 'E', 'P', 'L', 'Y', '\r', '\n', '$', '2', '\r', '\n', 'O', 'N', '\r', '\n']
 
-expect Command.encode(Connect.client_setinfo({ first: ['L', 'I', 'B', '-', 'N', 'A', 'M', 'E'], rest: [[0, 1, 255]] })) == ['*', '4', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'S', 'E', 'T', 'I', 'N', 'F', 'O', '\r', '\n', '$', '8', '\r', '\n', 'L', 'I', 'B', '-', 'N', 'A', 'M', 'E', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
+expect Command.encode(Session.client_setinfo({ first: ['L', 'I', 'B', '-', 'N', 'A', 'M', 'E'], rest: [[0, 1, 255]] })) == ['*', '4', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'S', 'E', 'T', 'I', 'N', 'F', 'O', '\r', '\n', '$', '8', '\r', '\n', 'L', 'I', 'B', '-', 'N', 'A', 'M', 'E', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Connect.client_setname([0, 1, 255])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'S', 'E', 'T', 'N', 'A', 'M', 'E', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
+expect Command.encode(Session.client_setname([0, 1, 255])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'S', 'E', 'T', 'N', 'A', 'M', 'E', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Connect.client_tracking(['O', 'N'], [[0, 1, 255], [0, 2, 255]])) == ['*', '5', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '8', '\r', '\n', 'T', 'R', 'A', 'C', 'K', 'I', 'N', 'G', '\r', '\n', '$', '2', '\r', '\n', 'O', 'N', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
+expect Command.encode(Session.client_tracking(['O', 'N'], [[0, 1, 255], [0, 2, 255]])) == ['*', '5', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '8', '\r', '\n', 'T', 'R', 'A', 'C', 'K', 'I', 'N', 'G', '\r', '\n', '$', '2', '\r', '\n', 'O', 'N', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 
-expect Command.encode(Connect.client_tracking(['O', 'N'], [])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '8', '\r', '\n', 'T', 'R', 'A', 'C', 'K', 'I', 'N', 'G', '\r', '\n', '$', '2', '\r', '\n', 'O', 'N', '\r', '\n']
+expect Command.encode(Session.client_tracking(['O', 'N'], [])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '8', '\r', '\n', 'T', 'R', 'A', 'C', 'K', 'I', 'N', 'G', '\r', '\n', '$', '2', '\r', '\n', 'O', 'N', '\r', '\n']
 
-expect Command.encode(Connect.client_trackinginfo({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '1', '2', '\r', '\n', 'T', 'R', 'A', 'C', 'K', 'I', 'N', 'G', 'I', 'N', 'F', 'O', '\r', '\n']
+expect Command.encode(Session.client_trackinginfo({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '1', '2', '\r', '\n', 'T', 'R', 'A', 'C', 'K', 'I', 'N', 'G', 'I', 'N', 'F', 'O', '\r', '\n']
 
-expect Command.encode(Connect.client_unblock(['1'], [[0, 2, 255], [0, 3, 255]])) == ['*', '5', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'U', 'N', 'B', 'L', 'O', 'C', 'K', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 3, 255, '\r', '\n']
+expect Command.encode(Session.client_unblock(['1'], [[0, 2, 255], [0, 3, 255]])) == ['*', '5', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'U', 'N', 'B', 'L', 'O', 'C', 'K', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 3, 255, '\r', '\n']
 
-expect Command.encode(Connect.client_unblock(['1'], [])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'U', 'N', 'B', 'L', 'O', 'C', 'K', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n']
+expect Command.encode(Session.client_unblock(['1'], [])) == ['*', '3', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'U', 'N', 'B', 'L', 'O', 'C', 'K', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n']
 
-expect Command.encode(Connect.client_unpause({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'U', 'N', 'P', 'A', 'U', 'S', 'E', '\r', '\n']
+expect Command.encode(Session.client_unpause({})) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'C', 'L', 'I', 'E', 'N', 'T', '\r', '\n', '$', '7', '\r', '\n', 'U', 'N', 'P', 'A', 'U', 'S', 'E', '\r', '\n']
 
-expect Command.encode(Connect.echo([0, 1, 255])) == ['*', '2', '\r', '\n', '$', '4', '\r', '\n', 'E', 'C', 'H', 'O', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
+expect Command.encode(Session.echo([0, 1, 255])) == ['*', '2', '\r', '\n', '$', '4', '\r', '\n', 'E', 'C', 'H', 'O', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n']
 
-expect Command.encode(Connect.hello([[0, 1, 255], [0, 2, 255]])) == ['*', '3', '\r', '\n', '$', '5', '\r', '\n', 'H', 'E', 'L', 'L', 'O', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
+expect Command.encode(Session.hello([[0, 1, 255], [0, 2, 255]])) == ['*', '3', '\r', '\n', '$', '5', '\r', '\n', 'H', 'E', 'L', 'L', 'O', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 
-expect Command.encode(Connect.hello([])) == ['*', '1', '\r', '\n', '$', '5', '\r', '\n', 'H', 'E', 'L', 'L', 'O', '\r', '\n']
+expect Command.encode(Session.hello([])) == ['*', '1', '\r', '\n', '$', '5', '\r', '\n', 'H', 'E', 'L', 'L', 'O', '\r', '\n']
 
-expect Command.encode(Connect.ping([[0, 1, 255], [0, 2, 255]])) == ['*', '3', '\r', '\n', '$', '4', '\r', '\n', 'P', 'I', 'N', 'G', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
+expect Command.encode(Session.ping([[0, 1, 255], [0, 2, 255]])) == ['*', '3', '\r', '\n', '$', '4', '\r', '\n', 'P', 'I', 'N', 'G', '\r', '\n', '$', '3', '\r', '\n', 0, 1, 255, '\r', '\n', '$', '3', '\r', '\n', 0, 2, 255, '\r', '\n']
 
-expect Command.encode(Connect.ping([])) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'P', 'I', 'N', 'G', '\r', '\n']
+expect Command.encode(Session.ping([])) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'P', 'I', 'N', 'G', '\r', '\n']
 
-expect Command.encode(Connect.quit({})) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'Q', 'U', 'I', 'T', '\r', '\n']
+expect Command.encode(Session.quit({})) == ['*', '1', '\r', '\n', '$', '4', '\r', '\n', 'Q', 'U', 'I', 'T', '\r', '\n']
 
-expect Command.encode(Connect.reset({})) == ['*', '1', '\r', '\n', '$', '5', '\r', '\n', 'R', 'E', 'S', 'E', 'T', '\r', '\n']
+expect Command.encode(Session.reset({})) == ['*', '1', '\r', '\n', '$', '5', '\r', '\n', 'R', 'E', 'S', 'E', 'T', '\r', '\n']
 
-expect Command.encode(Connect.select(['1'])) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'S', 'E', 'L', 'E', 'C', 'T', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n']
+expect Command.encode(Session.select(['1'])) == ['*', '2', '\r', '\n', '$', '6', '\r', '\n', 'S', 'E', 'L', 'E', 'C', 'T', '\r', '\n', '$', '1', '\r', '\n', '1', '\r', '\n']

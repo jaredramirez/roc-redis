@@ -270,7 +270,7 @@ ensure_key_prefix! = |config|
 		Ok(config)
 	}
 
-Ok(execution_config) = RedisConfig.default |> RedisConfig.with_max_commands(65_536) |> RedisConfig.build
+execution_config = RedisConfig.default |> RedisConfig.with_max_commands(65_536) |> RedisConfig.build
 
 raw_request! : Command.Command, Execute.Transport(read_err, write_err) => Try(Resp.Resp, [BenchmarkFailed(Str)])
 raw_request! = |command, transport|

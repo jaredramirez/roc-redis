@@ -73,7 +73,8 @@ main! = |_args| {
 	for (fixture, diagnostic) in [
 		("zero-positive", "expected a positive integer"),
 		("empty-command", "expected non-empty bytes"),
-		("invalid-config", "non exhaustive destructure"),
+		("invalid-config", "expected a positive integer"),
+		("db-index-zero", "expected a positive integer"),
 		("opaque-command", "cannot use opaque nominal type"),
 	] {
 		require_known_failure!(timeout_program, "API compile rejection: ${fixture}", "roc", ["check", "integration/compile_fail/${fixture}.roc", "--no-cache"], [diagnostic], [])?

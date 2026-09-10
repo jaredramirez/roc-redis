@@ -7,7 +7,8 @@ import redis.Command
 import redis.Commands
 import redis.Config
 import redis.Connection
-import redis.Connect as RawConnect
+import redis.Client
+import redis.Session as RawSession
 import redis.Decoder
 import redis.Geo as RawGeo
 import redis.Hashes as RawHashes
@@ -34,20 +35,19 @@ import redis.VectorSets as RawVectorSets
 ## expectations, so these checks intentionally live in the consumer.
 Consumer := [].{
 
-	## Type-check nominal construction and dispatch across the bundle boundary.
+	## Type-check nominal construction and dispatch across the bundle boundary,
+	## through both the direct Connection.open route and the Client factory.
 	request! = |config, transport, request| {
-		connection : Connection(_, _)
-		connection = { config, read!: transport.read!, write_all!: transport.write_all! }
+		connection = Connection.open(config, transport)
 		connection.request!(request)
 	}
 	batch! = |config, transport, batch| {
-		connection : Connection(_, _)
-		connection = { config, read!: transport.read!, write_all!: transport.write_all! }
+		connection = Client.new(config).attach(transport)
 		connection.batch!(batch)
 	}
 }
 
-Ok(configured) = Config.default |> Config.with_read_size(32_768) |> Config.build
+configured = Config.default |> Config.with_read_size(32_768) |> Config.build
 
 expect configured.read_size() == 32_768
 
@@ -97,12 +97,7 @@ expect {
 	}
 }
 
-expect {
-	match Config.default |> Config.with_read_size(0) |> Config.build {
-		Err(ZeroLimit(ReadSize)) => True
-		_ => False
-	}
-}
+expect (Config.default |> Config.with_read_size(1) |> Config.build).read_size() == 1
 
 expect {
 	key = Str.to_utf8("key")
@@ -110,7 +105,7 @@ expect {
 		RawArrays.arcount(key),
 		RawBitmaps.getbit(key, Str.to_utf8("0")),
 		RawCluster.cluster_info({}),
-		RawConnect.select(Str.to_utf8("0")),
+		RawSession.select(Str.to_utf8("0")),
 		RawGeo.geopos(key, []),
 		RawHashes.hgetall(key),
 		RawHyperLogLog.pfcount(key, []),
@@ -140,7 +135,7 @@ expect {
 		Commands.Arrays.arcount(key).command(),
 		Commands.Bitmaps.get_bit(key, 0).command(),
 		Commands.Cluster.info({}).command(),
-		Commands.Connect.select(0).command(),
+		Commands.Session.select(0).command(),
 		Commands.Geo.geo_pos(key, []).command(),
 		Commands.Hashes.hget_all(key).command(),
 		Commands.HyperLogLog.pf_count(NonEmpty.new(key, [])).command(),

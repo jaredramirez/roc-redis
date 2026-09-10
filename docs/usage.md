@@ -2,21 +2,28 @@
 
 ## Bound execution (recommended)
 
-Bind an already-connected stream and validated config once:
+Create a client from validated config once, then bind each connected stream:
 
 ```roc
-import redis.Connection
+import redis.Client
+import redis.Transport
 
-connection : Connection(_, _)
-connection = {
-    config: config,
-    read!: |max_bytes| stream.read_up_to!(max_bytes, 2_000)
-        .map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
+client = Client.new(config)
+
+transport = Transport.from_bytes_io({
+    read_bytes!: |max_bytes| stream.read_up_to!(max_bytes, 2_000),
     write_all!: |bytes| stream.write!(bytes, 2_000),
-}
-pong = connection.request!(Commands.Connect.ping())?
+})
+connection = client.connect!(transport)?
+pong = connection.request!(Commands.Session.ping())?
 results = connection.batch!(batch)?
 ```
+
+`Client` holds the validated config plus optional session policy (`Client.with_auth`,
+`Client.with_db`). `connect!` runs the AUTH/SELECT handshake and returns a `Connection`;
+for pooling, `client.attach` binds a reused socket with no I/O and `client.handshake!`
+initializes a fresh one. `Transport.from_bytes_io` folds the raw-reader adapter (an
+empty read means end of stream); `Transport.new` takes an explicit `Data`/`End` reader.
 
 `Connection` is a transparent nominal record. It delegates to the same execution
 logic as the unbound `Execute.request!` and `Execute.batch!` forms documented
@@ -25,9 +32,10 @@ batch plans remain pure and reusable, including custom decoders. No per-command
 methods or hidden retries are added.
 
 This value does not acquire or close a socket, enforce exclusive access, or
-invalidate aliases after a failure. The application must still discard the
-stream after `ExchangeFailed`. `Execute.no_reply!` remains separate and requires
-only a write capability, not a full reply-reading connection.
+invalidate aliases after a failure. The application must still discard the stream
+after `ExchangeFailed`; `Execute.disposition` classifies which errors require that,
+and a failed `handshake!` always does. `Execute.no_reply!` remains separate and
+requires only a write capability, not a full reply-reading connection.
 
 A binary-safe, platform-agnostic Redis client package for Roc.
 
@@ -71,8 +79,8 @@ import redis.Commands
 import redis.Config
 import redis.Execute
 
-# Recommended: validate constant settings once, at module scope.
-Ok(config) =
+# Recommended: build validated settings once, at module scope.
+config =
     Config.default
     |> Config.with_read_size(32_768)
     |> Config.build
@@ -84,7 +92,9 @@ request = Commands.Strings.set("key", "value", {
 result = Execute.request!(config, request, transport)?
 ```
 
-For runtime settings, handle `Config.build` using `?` or `match`. Option records
+Scalar limits are compile-time-validated positives, so `Config.build` is total
+and a literal like `Config.with_read_size(0)` fails to compile; for a limit read
+at runtime, validate it with `Positive.from_u64` before passing it. Option records
 infer their nominal type from the call and fill omitted fields with defaults.
 On the pinned compiler, an empty default option record must have an explicit
 type: import its module directly and use e.g. `Strings.SetOptions.{}`, or pass
@@ -259,17 +269,19 @@ the application's earlier command/batch construction or concurrent exchanges.
 
 ## Supplying a transport
 
-`Execute.Transport` specifies semantics, not a networking implementation:
+`Execute.Transport` specifies semantics, not a networking implementation.
+`Transport.from_bytes_io` builds one from a raw byte reader and writer, folding
+the empty-is-`End` adapter that every integration otherwise repeats:
 
 ```roc
-transport : Execute.Transport(_, _)
-transport = {
-    read!: |max_bytes|
-        stream.read_up_to!(max_bytes, idle_timeout_ms)
-            .map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
+transport = Transport.from_bytes_io({
+    read_bytes!: |max_bytes| stream.read_up_to!(max_bytes, idle_timeout_ms),
     write_all!: |bytes| stream.write!(bytes, idle_timeout_ms),
-}
+})
 ```
+
+`Transport.new` takes a reader that already yields `Data`/`End` when the platform
+distinguishes a definitive EOF from a short read itself.
 
 `Data` contains 1 through `max_bytes` bytes. `End` means definitive EOF; a
 timeout is an error. `write_all!` succeeds only after accepting the entire buffer.
@@ -283,8 +295,8 @@ remains deliberately out of scope.
 results = Execute.batch!(
     config,
     Batch.each([
-        Commands.Connect.ping(),
-        Commands.Connect.echo("hello"),
+        Commands.Session.ping(),
+        Commands.Session.echo("hello"),
     ]),
     transport,
 )?

@@ -22,7 +22,7 @@ Fixture : { commands : List(Command.Command), wire : List(U8), responses : List(
 
 Record : { schema : Str, variant : Str, source : Str, compiler : Str, stage : Str, sample : U64, iterations : U64, commands_per_iteration : U64, elapsed_ns : U128, validated : Bool }
 
-Ok(config) = Config.default |> Config.build
+config = Config.default |> Config.build
 
 main! = |args| {
 	variant = Env.var_str!(OsStr.from_str("ROC_REDIS_STAGE_VARIANT")) ? |_| StageFailed("set ROC_REDIS_STAGE_VARIANT to the compiled variant")

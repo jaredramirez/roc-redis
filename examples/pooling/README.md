@@ -17,25 +17,30 @@ The boundary stays small:
 
 ```roc
 pool.with_connection!(2_000, |stream| {
-    client = connection(stream)
-    pong = client.request!(Commands.Connect.ping())?
+    conn = client.attach(transport_for(stream))
+    pong = conn.request!(Commands.Session.ping())?
     Ok(Reuse(pong))
 })
 ```
 
-`connection` binds the stream's read/write effects to the Redis configuration;
-the Redis package knows nothing about pooling. See [main.roc](main.roc).
+`client.attach` binds the leased stream's read/write effects into a `Connection`
+without any I/O; a client with authentication or a selected database would run
+`client.handshake!` once on a freshly dialed socket instead. The Redis package
+knows nothing about pooling. See [main.roc](main.roc).
 
-The callback returns `Reuse(value)` or `Discard(value)`. An error always
-discards the socket. Reuse is a protocol-level decision: return it only after
+The callback returns `Reuse(value)` or `Discard(value)`. `Execute.disposition`
+tells the two apart: a transport failure (`ExchangeFailed`) corrupts framing and
+must discard, while a server error or decode failure follows a complete reply and
+can be reused. Reuse is still a protocol-level decision: return it only after
 consuming all replies and leaving Redis session state suitable for the next
 borrower. Socket errors, timeouts, and EOF poison a lease, so even a subsequent
 `Reuse` cannot return that socket to the pool. Escaped stream aliases carry an
 expired lease ID and cannot access a later borrower's connection.
 
 The executable checks reuse using Redis's `CLIENT ID`, explicit discard,
-callback-error cleanup, stale-alias rejection, bounded capacity exhaustion, and
-discard after an actual read timeout even when the callback asks for reuse.
+callback-error cleanup, stale-alias rejection, bounded capacity exhaustion,
+discard after an actual read timeout even when the callback asks for reuse, and
+reuse after a benign server error that `Execute.disposition` classifies as safe.
 
 ## Deliberately limited platform
 

@@ -15,6 +15,7 @@ import redis.Command
 import redis.Commands
 import redis.Config
 import redis.Decoder
+import redis.Positive
 import redis.Execute
 import redis.NonEmpty
 import redis.Reply
@@ -368,7 +369,8 @@ run_repeated_exchange! : { count : U64, size : U64 } => Try(Measurement, [ProbeF
 run_repeated_exchange! = |{ count, size }| {
 	payload = make_payload(size, 29)
 	wire = "$${size.to_str()}\r\n".to_utf8().concat(payload).append('\r').append('\n')
-	config = Config.default |> Config.with_read_size(wire.len()) |> Config.with_max_response_bytes(wire.len()) |> Config.build ? |_| ProbeFailed("could not build repeated-exchange config")
+	read_budget = Positive.from_u64(wire.len()) ? |_| ProbeFailed("repeated-exchange wire must be non-empty")
+	config = Config.default |> Config.with_read_size(read_budget) |> Config.with_max_response_bytes(read_budget) |> Config.build
 	request = Request.new(Command.ping({}), Reply.bulk)
 	expected_write = Command.encode(Command.ping({}))
 	var $checksum = 0.U64

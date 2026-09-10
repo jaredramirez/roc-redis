@@ -11,13 +11,16 @@ import pf.Tcp
 import http.Response
 import redis.Commands
 import redis.Config
-import redis.Connection
+import redis.Client
+import redis.Transport
 
 Context : {}
 
 program = { init!, respond!, shutdown! }
 
-Ok(config) = Config.default |> Config.build
+config = Config.default |> Config.build
+
+client = Client.new(config)
 
 init! = || Ok({ config: Server.default_config.with_listen({ host: "127.0.0.1", port: 8000 }), context: {} })
 
@@ -25,14 +28,13 @@ respond! : Server.Request, Context => Try(Server.Outcome, [ServerErr(Str), ..])
 respond! = |_request, _context| {
 	stream = Tcp.connect!("127.0.0.1", 6379)
 		? |error| ServerErr(Tcp.connect_err_to_str(error))
-	connection : Connection(_, _)
-	connection = {
-		config: config,
-		read!: |max_bytes| stream.read_up_to!(max_bytes)
-			.map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
+	transport = Transport.from_bytes_io({
+		read_bytes!: |max_bytes| stream.read_up_to!(max_bytes),
 		write_all!: |bytes| stream.write!(bytes),
-	}
-	pong = connection.request!(Commands.Connect.ping())
+	})
+	connection = client.connect!(transport)
+		? |_| ServerErr("Redis handshake failed")
+	pong = connection.request!(Commands.Session.ping())
 		? |_| ServerErr("Redis PING failed")
 	Ok(Server.respond(Response.from_status(200).with_body(pong.to_list())))
 }

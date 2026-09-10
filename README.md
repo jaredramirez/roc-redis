@@ -36,23 +36,24 @@ import pf.Tcp
 import pf.Stdout
 import pf.OsStr exposing [OsStr]
 import redis.Bytes
+import redis.Client
 import redis.Commands
 import redis.Config
-import redis.Connection
+import redis.Transport
 
-Ok(config) = Config.default |> Config.build
+config = Config.default |> Config.build
+client = Client.new(config)
 
 main! : List(OsStr) => Try({}, [ExampleFailed(Str), Exit(I32), ..])
 main! = |_args| {
 	stream = Tcp.connect!("127.0.0.1", 6379, 2_000)
 		? |error| ExampleFailed("connect: ${Str.inspect(error)}")
-	connection : Connection(_, _)
-	connection = {
-		config: config,
-		read!: |max_bytes| stream.read_up_to!(max_bytes, 2_000)
-			.map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
+	transport = Transport.from_bytes_io({
+		read_bytes!: |max_bytes| stream.read_up_to!(max_bytes, 2_000),
 		write_all!: |bytes| stream.write!(bytes, 2_000),
-	}
+	})
+	connection = client.connect!(transport)
+		? |_| ExampleFailed("Redis handshake failed")
 	stored = connection.request!(Commands.Strings.get("example:greeting"))
 		? |error| ExampleFailed("GET: ${Str.inspect(error)}")
 	greeting = match stored {
@@ -79,15 +80,22 @@ only against disposable data; stop Redis with Ctrl-C when finished.
 
 ## Bring your own transport
 
-Your application owns the connection, TLS, deadlines, and exclusive access.
-`read!` returns at most the requested bytes; `write_all!` must accept the whole
-buffer. Discard the connection after `ExchangeFailed`; execution may be ambiguous.
+Your application owns the socket, TLS, deadlines, and exclusive access; the
+package needs only two effects, `read!` and `write_all!`. `Transport.from_bytes_io`
+wraps a raw byte reader and writer into a transport (an empty read means end of
+stream). `Client.new(config)` holds your configuration and session policy
+(`with_auth`, `with_db`); `client.connect!(transport)` runs the AUTH/SELECT
+handshake and returns a ready `Connection`. For pooling, `client.attach` binds a
+reused socket without a handshake and `client.handshake!` initializes a freshly
+dialed one.
 
 `connection.request!` handles one request. `connection.batch!` pipelines requests in
 one exchange, with `Batch.each` preserving each result. Batching is not a transaction.
-Reply suppression has a separate, explicitly unsafe `Execute.no_reply!` API.
-The wrapper does not enforce ownership or invalidate aliases after failure.
-Unbound `Execute.request!` and `Execute.batch!` remain available for adapters.
+Discard the connection after `ExchangeFailed`; `Execute.disposition` classifies which
+errors require that. Reply suppression has a separate, explicitly unsafe
+`Execute.no_reply!` API. The connection does not enforce ownership or invalidate
+aliases after failure. Unbound `Execute.request!` and `Execute.batch!` remain
+available for adapters.
 
 The core includes no RESP3, automatic retries, cluster routing, or connection pool.
 The [minimal Zig pooling example](examples/pooling/README.md) demonstrates

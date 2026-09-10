@@ -16,6 +16,12 @@ See `package/Execute.roc`, `package/Request.roc`, and the two connector examples
 transport record; repeated calls carry config and transport explicitly. Precise
 error categories can make common application handling verbose.
 
+**Resolved:** `Transport.from_bytes_io` folds the empty-is-End adapter, and
+`Client` binds config once, so callers hold a client and call `client.connect!`
+or `client.attach` instead of threading config and transport per call — this
+answers the bound-sender question below. `Execute.disposition` maps the error
+families onto a Reuse/Discard decision.
+
 Questions to ask:
 
 - Does passing config and transport per call fit your platform, or would you
@@ -51,9 +57,11 @@ boundary without a live server. No new combinator API was added.
 
 ## 3. Configuration and literal-backed types
 
-**Assessment:** a pure Builder, non-failing setters, and one final build support
-the intended single module-level Ok(config) destructure. Bytes, NonEmptyBytes,
-NonEmpty, and Positive separate useful invariants without forcing text decoding.
+**Assessment:** a pure Builder and non-failing setters feed one final build.
+Scalar limits are now compile-time-validated positives, so build is total and the
+module-level binding needs no Ok destructure; an invalid literal such as
+`Config.with_read_size(0)` fails to compile. Bytes, NonEmptyBytes, NonEmpty, and
+Positive separate useful invariants without forcing text decoding.
 See their corresponding `package/` modules.
 
 **Friction:** setters use `with_max_*` while getters use `*_limit`; literal hooks

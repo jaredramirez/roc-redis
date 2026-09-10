@@ -11,6 +11,7 @@ import pf.Stdout
 import redis.Batch
 import redis.Command
 import redis.Config
+import redis.Positive
 import redis.Execute
 import redis.NoReply
 import redis.Request
@@ -18,14 +19,16 @@ import redis.Resp
 
 Fault : [EmptyRead, EndOfFile, Malformed, OversizedRead, PartialThenEnd, ReadError]
 
-Ok(default_config) = Config.build(Config.default)
+default_config = Config.build(Config.default)
 
-Ok(one_command_config) = Config.default |> Config.with_max_commands(1) |> Config.build
+one_command_config = Config.default |> Config.with_max_commands(1) |> Config.build
 
 request_limit : U64
 request_limit = ping_wire(1).len() - 1
 
-Ok(short_request_config) = Config.default |> Config.with_max_request_bytes(request_limit) |> Config.build
+Ok(request_bytes) = Positive.from_u64(request_limit)
+
+short_request_config = Config.default |> Config.with_max_request_bytes(request_bytes) |> Config.build
 
 main! : List(OsStr) => Try({}, [TransportPropertiesFailed(Str), Exit(I32), ..])
 main! = |args| {
@@ -192,13 +195,18 @@ integer_request = |_| Request.new(
 	},
 )
 
-fault_config : U64, U64 -> Try(Config.Config, Config.Error)
-fault_config = |commands, budget|
-	Config.default
-		|> Config.with_max_commands(commands)
-		|> Config.with_read_size(budget)
-		|> Config.with_max_response_bytes(budget)
-		|> Config.build
+fault_config : U64, U64 -> Try(Config.Config, [Zero])
+fault_config = |commands, budget| {
+	command_limit = Positive.from_u64(commands)?
+	budget_limit = Positive.from_u64(budget)?
+	Ok(
+		Config.default
+			|> Config.with_max_commands(command_limit)
+			|> Config.with_read_size(budget_limit)
+			|> Config.with_max_response_bytes(budget_limit)
+			|> Config.build,
+	)
+}
 
 command_limit_rejection! : {} => Bool
 command_limit_rejection! = |_| {

@@ -1,39 +1,39 @@
 import Decoder
+import Positive
 
 ## Validated resource policy. Build once and reuse across executions.
 ##
-## Prefer one module-level destructure for constant application configuration:
+## The scalar limits are compile-time-validated positive integers, so a literal
+## like `Config.with_read_size(0)` fails to compile and `Config.build` is total:
 ##
 ## ```roc
-## Ok(config) =
+## config =
 ##     Config.default
 ##     |> Config.with_read_size(32_768)
 ##     |> Config.build
 ## ```
 ##
-## The compiler checks the constant result before runtime. For values obtained
-## at runtime, handle Config.build with `?` or `match` instead. Keep constant
-## declarations outside `expect` blocks on the pinned compiler.
+## For a value obtained at runtime, validate it through `Positive.from_u64`
+## first. Decoder limits are supplied as `Decoder.Limits`; `default` and
+## `redis_compatible` provide sound values and the decoder tolerates any others.
 Config :: {
 	limits : Decoder.Limits,
-	max_commands : U64,
-	max_request_bytes : U64,
-	max_response_bytes : U64,
-	read_size : U64,
+	max_commands : Positive.Positive,
+	max_request_bytes : Positive.Positive,
+	max_response_bytes : Positive.Positive,
+	read_size : Positive.Positive,
 }.{
 	is_eq : _
 
-	## Unvalidated candidates. Setters never fail; build validates the whole value.
+	## Unvalidated candidates. Setters never fail; every scalar limit is already
+	## a validated Positive, so build has nothing left to reject.
 	Builder :: {
 		limits : Decoder.Limits,
-		max_commands : U64,
-		max_request_bytes : U64,
-		max_response_bytes : U64,
-		read_size : U64,
+		max_commands : Positive.Positive,
+		max_request_bytes : Positive.Positive,
+		max_response_bytes : Positive.Positive,
+		read_size : Positive.Positive,
 	}
-
-	Field : [ArrayLength, BulkLength, Commands, Depth, FrameLength, LineLength, ReadSize, RequestBytes, ResponseBytes, Values]
-	Error : [ZeroLimit(Field)]
 
 	## Bounded starting policy for ordinary workloads. All byte limits are bytes;
 	## decoder limits apply per reply and response bytes apply per exchange.
@@ -41,8 +41,8 @@ Config :: {
 	default = Builder.{
 		limits: Decoder.default_limits,
 		max_commands: 4096,
-		max_request_bytes: 16 * 1024 * 1024,
-		max_response_bytes: 16 * 1024 * 1024,
+		max_request_bytes: 16_777_216,
+		max_response_bytes: 16_777_216,
 		read_size: 16_384,
 	}
 
@@ -57,85 +57,53 @@ Config :: {
 		read_size: 16_384,
 	}
 
-	with_read_size : Builder, U64 -> Builder
+	with_read_size : Builder, Positive.Positive -> Builder
 	with_read_size = |builder, read_size| { ..builder, read_size }
 
-	with_max_commands : Builder, U64 -> Builder
+	with_max_commands : Builder, Positive.Positive -> Builder
 	with_max_commands = |builder, max_commands| { ..builder, max_commands }
 
-	with_max_request_bytes : Builder, U64 -> Builder
+	with_max_request_bytes : Builder, Positive.Positive -> Builder
 	with_max_request_bytes = |builder, max_request_bytes| { ..builder, max_request_bytes }
 
-	with_max_response_bytes : Builder, U64 -> Builder
+	with_max_response_bytes : Builder, Positive.Positive -> Builder
 	with_max_response_bytes = |builder, max_response_bytes| { ..builder, max_response_bytes }
 
 	with_decoder_limits : Builder, Decoder.Limits -> Builder
 	with_decoder_limits = |builder, limits| { ..builder, limits }
 
-	build : Builder -> Try(Config, Error)
-	build = |builder| {
-		fields = [
-			(ReadSize, builder.read_size),
-			(Commands, builder.max_commands),
-			(RequestBytes, builder.max_request_bytes),
-			(ResponseBytes, builder.max_response_bytes),
-			(ArrayLength, builder.limits.max_array_length),
-			(BulkLength, builder.limits.max_bulk_length),
-			(Depth, builder.limits.max_depth),
-			(FrameLength, builder.limits.max_frame_length),
-			(LineLength, builder.limits.max_line_length),
-			(Values, builder.limits.max_values),
-		]
-		for (field, value) in fields {
-			if value == 0 {
-				return Err(ZeroLimit(field))
-			}
-		}
-		Ok(
-			Config.{
-				limits: builder.limits,
-				max_commands: builder.max_commands,
-				max_request_bytes: builder.max_request_bytes,
-				max_response_bytes: builder.max_response_bytes,
-				read_size: builder.read_size,
-			},
-		)
+	## Finalize a policy. Total: every scalar already carries its non-zero
+	## invariant and decoder limits are trusted, so there is nothing to reject.
+	build : Builder -> Config
+	build = |builder| Config.{
+		limits: builder.limits,
+		max_commands: builder.max_commands,
+		max_request_bytes: builder.max_request_bytes,
+		max_response_bytes: builder.max_response_bytes,
+		read_size: builder.read_size,
 	}
 
 	decoder_limits : Config -> Decoder.Limits
 	decoder_limits = |config| config.limits
 
 	command_limit : Config -> U64
-	command_limit = |config| config.max_commands
+	command_limit = |config| config.max_commands.to_u64()
 
 	request_byte_limit : Config -> U64
-	request_byte_limit = |config| config.max_request_bytes
+	request_byte_limit = |config| config.max_request_bytes.to_u64()
 
 	response_byte_limit : Config -> U64
-	response_byte_limit = |config| config.max_response_bytes
+	response_byte_limit = |config| config.max_response_bytes.to_u64()
 
 	read_size : Config -> U64
-	read_size = |config| config.read_size
+	read_size = |config| config.read_size.to_u64()
 }
 
-Ok(production_config) = Config.default |> Config.with_read_size(32_768) |> Config.with_max_request_bytes(64 * 1024 * 1024) |> Config.build
+production_config = Config.default |> Config.with_read_size(32_768) |> Config.with_max_request_bytes(67_108_864) |> Config.build
 
-expect production_config.read_size() == 32_768 and production_config.request_byte_limit() == 64 * 1024 * 1024
+expect production_config.read_size() == 32_768 and production_config.request_byte_limit() == 67_108_864
 
-expect Config.build(Config.redis_compatible).is_ok()
-
-expect Config.build(Config.default).map_ok(Config.decoder_limits) == Ok(Decoder.default_limits)
-expect Config.build(Config.redis_compatible).map_ok(Config.decoder_limits) == Ok(Decoder.redis_compatible_limits)
-
-expect Config.default |> Config.with_read_size(0) |> Config.build == Err(ZeroLimit(ReadSize))
-
-expect Config.default |> Config.with_max_commands(0) |> Config.build == Err(ZeroLimit(Commands))
-
-expect Config.default |> Config.with_max_request_bytes(0) |> Config.build == Err(ZeroLimit(RequestBytes))
-
-expect Config.default |> Config.with_max_response_bytes(0) |> Config.build == Err(ZeroLimit(ResponseBytes))
-
-## Intermediate candidate values may be invalid; only the final value matters.
-Ok(repaired_config) = Config.default |> Config.with_read_size(0) |> Config.with_read_size(1) |> Config.build
-
-expect repaired_config.read_size() == 1
+expect Config.build(Config.default).decoder_limits() == Decoder.default_limits
+expect Config.build(Config.redis_compatible).decoder_limits() == Decoder.redis_compatible_limits
+expect Config.build(Config.default).command_limit() == 4096
+expect Config.build(Config.redis_compatible).command_limit() == 65_536

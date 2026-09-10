@@ -8,20 +8,27 @@ import pf.Tcp
 import redis.Commands
 import redis.Config
 import redis.Connection
+import redis.Client
+import redis.Transport
+import redis.Execute
 
-Ok(config) = Config.default |> Config.build
+config = Config.default |> Config.build
 
+client = Client.new(config)
+
+transport_for : Tcp.Stream -> Execute.Transport(Tcp.Error, Tcp.Error)
+transport_for = |stream| Transport.from_bytes_io({
+	read_bytes!: |max_bytes| stream.read_up_to!(max_bytes, 2_000),
+	write_all!: |bytes| stream.write!(bytes, 2_000),
+})
+
+## A Connection over the leased stream. This demo's client carries no session
+## policy, so binding is a pure `attach`. A client with auth or database
+## selection would additionally run `client.handshake!` once on a freshly dialed
+## socket (and only `attach` on reuse) — the seam a production pool signals to
+## the callback.
 connection : Tcp.Stream -> Connection(Tcp.Error, Tcp.Error)
-connection = |stream| {
-	bound : Connection(_, _)
-	bound = {
-		config,
-		read!: |max_bytes| stream.read_up_to!(max_bytes, 2_000)
-			.map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
-		write_all!: |bytes| stream.write!(bytes, 2_000),
-	}
-	bound
-}
+connection = |stream| client.attach(transport_for(stream))
 
 main! : U16 => Bool
 main! = |port| {
@@ -42,8 +49,8 @@ exercise! = |pool| {
 	first = pool.with_connection!(
 		2_000,
 		|stream| {
-			client = connection(stream)
-			id = client.request!(Commands.Connect.client_id({})) ? |_| Failed
+			conn = connection(stream)
+			id = conn.request!(Commands.Session.client_id({})) ? |_| Failed
 			Ok(Reuse({ id, stale: stream }))
 		},
 	) ? |_| Failed
@@ -51,8 +58,8 @@ exercise! = |pool| {
 	second = pool.with_connection!(
 		2_000,
 		|stream| {
-			client = connection(stream)
-			id = client.request!(Commands.Connect.client_id({})) ? |_| Failed
+			conn = connection(stream)
+			id = conn.request!(Commands.Session.client_id({})) ? |_| Failed
 			if id != first.id {
 				return Err(Failed)
 			}
@@ -67,7 +74,7 @@ exercise! = |pool| {
 			if nested.is_ok() {
 				return Err(Failed)
 			}
-			pong = client.request!(Commands.Connect.ping()) ? |_| Failed
+			pong = conn.request!(Commands.Session.ping()) ? |_| Failed
 			if pong.to_utf8() != Ok("PONG") {
 				return Err(Failed)
 			}
@@ -79,7 +86,7 @@ exercise! = |pool| {
 	third = pool.with_connection!(
 		2_000,
 		|stream| {
-			id = connection(stream).request!(Commands.Connect.client_id({})) ? |_| Failed
+			id = connection(stream).request!(Commands.Session.client_id({})) ? |_| Failed
 			if id == second {
 				return Err(Failed)
 			}
@@ -97,7 +104,7 @@ exercise! = |pool| {
 	fourth = pool.with_connection!(
 		2_000,
 		|stream| {
-			id = connection(stream).request!(Commands.Connect.client_id({})) ? |_| Failed
+			id = connection(stream).request!(Commands.Session.client_id({})) ? |_| Failed
 			if id == third {
 				return Err(Failed)
 			}
@@ -114,8 +121,38 @@ exercise! = |pool| {
 	pool.with_connection!(
 		2_000,
 		|stream| {
-			id = connection(stream).request!(Commands.Connect.client_id({})) ? |_| Failed
+			id = connection(stream).request!(Commands.Session.client_id({})) ? |_| Failed
 			if id == fourth {
+				return Err(Failed)
+			}
+			Ok(Reuse({}))
+		},
+	) ? |_| Failed
+
+	# A semantic server error (SELECT out of range) leaves the wire framing
+	# intact. Execute.disposition classifies it as Reuse, so the socket returns
+	# to the pool instead of being dropped by an "any error discards" rule.
+	recovered = pool.with_connection!(
+		2_000,
+		|stream| {
+			conn = connection(stream)
+			before = conn.request!(Commands.Session.client_id({})) ? |_| Failed
+			match conn.request!(Commands.Session.select(9_999)) {
+				Ok(_) => Err(Failed)
+				Err(error) => match Execute.disposition(error) {
+					Reuse => Ok(Reuse(before))
+					Discard => Err(Failed)
+				}
+			}
+		},
+	) ? |_| Failed
+
+	# The same socket must come back: the server error did not poison it.
+	pool.with_connection!(
+		2_000,
+		|stream| {
+			id = connection(stream).request!(Commands.Session.client_id({})) ? |_| Failed
+			if id != recovered {
 				return Err(Failed)
 			}
 			Ok(Reuse({}))

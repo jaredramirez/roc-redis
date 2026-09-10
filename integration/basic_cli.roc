@@ -19,12 +19,13 @@ import redis.Batch
 import redis.Bytes
 import redis.Command
 import redis.Commands as TypedCommands
+import redis.Client
 import redis.Config
-import redis.Connection
 import redis.Execute
 import redis.NonEmpty
 import redis.Reply
 import redis.Request
+import redis.Transport
 import TypedCases
 
 io_idle_timeout_ms : U64
@@ -33,7 +34,9 @@ io_idle_timeout_ms = 2_000
 test_value : List(U8)
 test_value = [0, 13, 10, 255, 128, 65]
 
-Ok(config) = Config.default |> Config.build
+config = Config.default |> Config.build
+
+client = Client.new(config)
 
 main! : List(OsStr) => Try({}, [IntegrationFailed(Str), Exit(I32), ..])
 main! = |args| {
@@ -44,14 +47,11 @@ main! = |args| {
 	stream = Tcp.connect!(target.host, target.port, io_idle_timeout_ms) ? |error| IntegrationFailed("connect: ${Str.inspect(error)}")
 
 	transport : Execute.Transport(_, _)
-	transport = {
-		read!: |max_bytes|
-			stream.read_up_to!(max_bytes, io_idle_timeout_ms)
-				.map_ok(|bytes| if bytes.is_empty() End else Data(bytes)),
+	transport = Transport.from_bytes_io({
+		read_bytes!: |max_bytes| stream.read_up_to!(max_bytes, io_idle_timeout_ms),
 		write_all!: |bytes| stream.write!(bytes, io_idle_timeout_ms),
-	}
-	connection : Connection(_, _)
-	connection = { config, read!: transport.read!, write_all!: transport.write_all! }
+	})
+	connection = client.connect!(transport) ? |error| client_failure("handshake", error)
 
 	ping_result = connection.request!(Request.new(Command.ping({}), Reply.simple)) ? |error| client_failure("PING", error)
 	if ping_result != "PONG".to_utf8() {

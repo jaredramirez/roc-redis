@@ -1,10 +1,11 @@
 # Module map
 
-Start with `Commands`, `Config`, and `Connection`. Generated raw families cover
+Start with `Commands`, `Config`, and `Client`. Generated raw families cover
 catalogued commands without semantic decoders. Use `Command.new` for custom or
 extension commands; both can support specialized connection-state protocols.
-Both layers remain public. `Commands.Connect` contains typed connection commands;
-`Connect` is their raw counterpart. Neither owns a transport.
+Both layers remain public. `Commands.Session` contains typed connection-management
+commands (AUTH, PING, SELECT, CLIENT …); `Session` is their raw counterpart.
+Neither owns a transport.
 
 | API path (not import syntax) | Produces or handles | Source |
 | --- | --- | --- |
@@ -12,9 +13,11 @@ Both layers remain public. `Commands.Connect` contains typed connection commands
 | `redis.Strings.get` | Raw `Command`, without a reply decoder | `package/Strings.roc` (generated) |
 | `redis.Command` | Binary command construction and encoding | `package/Command.roc` |
 | `redis.Request`, `redis.Batch`, `redis.NoReply` | Plans for one reply, a batch, or suppressed replies | Corresponding package modules |
-| `redis.Execute` | Validated exchange using supplied effectful functions | `package/Execute.roc` |
-| `redis.Connection` | Nominal config/effect bundle with `request!` and `batch!` methods | `package/Connection.roc` |
-| `redis.Config` | Pure settings builder and final validation | `package/Config.roc` |
+| `redis.Execute` | Validated exchange using supplied effectful functions; `Execute.disposition` classifies reuse/discard | `package/Execute.roc` |
+| `redis.Transport` | Constructors (`new`, `from_bytes_io`) for the two-effect byte transport | `package/Transport.roc` |
+| `redis.Connection` | A bound `{ config, transport }` with `request!` and `batch!`; `Connection.open` builds one | `package/Connection.roc` |
+| `redis.Client` | Config plus session policy; mints connections via `attach`, `handshake!`, and `connect!` | `package/Client.roc` |
+| `redis.Config` | Pure settings builder; `build` is total (scalar limits are validated positives) | `package/Config.roc` |
 | `redis.Decoder`, `redis.Resp` | Incremental RESP2 framing and wire values | Corresponding package modules |
 | `redis.Reply` | Pure semantic decoders and explicit UTF-8 validation | `package/Reply.roc` |
 | `redis.Bytes`, `redis.NonEmptyBytes`, `redis.NonEmpty`, `redis.Positive` | Small invariant-bearing values | Corresponding package modules |
