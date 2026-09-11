@@ -405,8 +405,8 @@ load_provenance! = |_| {
 
 	if !([nix_source_id, build_mode, nix_system, os, arch].all(is_safe_metadata)) {
 		Err(BenchmarkFailed("benchmark provenance must contain 1 through 128 safe ASCII characters per field"))
-	} else if build_mode != "dev" and build_mode != "speed" {
-		Err(BenchmarkFailed("benchmark build mode must be dev or experimental speed, received ${Str.inspect(build_mode)}"))
+	} else if !(["dev", "speed", "size"].contains(build_mode)) {
+		Err(BenchmarkFailed("benchmark build mode must be dev or experimental speed or size, received ${Str.inspect(build_mode)}"))
 	} else if nix_system != "${arch}-${os}" {
 		Err(BenchmarkFailed("Nix system ${Str.inspect(nix_system)} does not match architecture/OS ${Str.inspect(arch)}-${Str.inspect(os)}"))
 	} else {
