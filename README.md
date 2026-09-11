@@ -109,22 +109,35 @@ operation; pipelines hold up to 100 operations.
 
 | Experiment | roc-redis | redis-py | go-redis | redis-rs | hiredis |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `ping_sequential` | 15,024 | 12,537 | 13,896 | 14,981 | 14,960 |
-| `set_get_sequential` | 7,458 | 6,091 | 6,950 | 7,400 | 7,392 |
-| `incr_sequential` | 14,874 | 12,548 | 13,892 | 14,814 | 14,787 |
-| `ping_pipeline` | 957,579 | 352,223 | 1,075,811 | 1,225,787 | 1,218,100 |
-| `mset_mget_sequential` | 7,242 | 5,751 | 6,910 | 7,406 | 7,462 |
-| `hash_roundtrip_sequential` | 7,291 | 5,987 | 6,937 | 7,385 | 7,375 |
-| `set_get_pipeline` | 459,252 | 117,322 | 456,467 | 468,426 | 577,383 |
+| `ping_sequential` | 14,836 | 12,475 | 13,839 | 14,766 | 14,728 |
+| `set_get_sequential` | 7,362 | 6,079 | 6,909 | 7,293 | 7,309 |
+| `incr_sequential` | 14,683 | 12,578 | 13,831 | 14,568 | 14,598 |
+| `ping_pipeline` | 982,800 | 358,179 | 1,050,813 | 1,207,349 | 1,226,768 |
+| `mset_mget_sequential` | 7,097 | 5,758 | 6,817 | 7,303 | 7,374 |
+| `hash_roundtrip_sequential` | 7,180 | 5,963 | 6,887 | 7,283 | 7,296 |
+| `set_get_pipeline` | 447,828 | 119,411 | 439,952 | 467,049 | 475,692 |
 
 All seven rows come from one position-balanced campaign on this checkout
-(2026-09-10; Redis 8.10.1 over loopback on aarch64-darwin; 50 validated samples
-of 10,000 operations per client and workload). Roc uses the experimental speed
-backend here; on the recommended dev default it stays within a few percent on
-the sequential rows and runs roughly 2.5–3× lower on the pipelined ones. These
-are descriptive medians on one quiet host, not a language ranking. Regenerate
-all seven with `just benchmark-all` (the controller prints this exact table);
-see the provenance below for exact pins and the dev-backend cross-check.
+(2026-09-11; Redis 8.10.1 over loopback on aarch64-darwin; 50 validated samples
+of 10,000 operations per client and workload).
+
+**If you pipeline, the backend matters more than anything else here.** These
+rows use the experimental speed backend. On the recommended dev default,
+single-command sequential workloads land within about 4%, because they wait on
+the network rather than on the client. Pipelined throughput does not:
+
+| Workload | dev | speed | speed is |
+| --- | ---: | ---: | --- |
+| `ping_pipeline` | 460,394 | 982,800 | **2.1× faster** |
+| `set_get_pipeline` | 174,442 | 447,828 | **2.6× faster** |
+
+Pipelining amortizes the network away, which leaves client-side CPU in charge,
+and that is exactly what the optimizing backend improves. Develop on dev; build
+with the speed backend if your workload pipelines.
+
+These are descriptive medians on one quiet host, not a language ranking.
+Regenerate all seven with `just benchmark-all` (the controller prints this exact
+table); see the provenance below for exact pins and the dev cross-check.
 
 [Chart provenance and exact values](docs/benchmark-chart.md) ·
 [Workloads and reproduction](benchmarks/README.md) ·

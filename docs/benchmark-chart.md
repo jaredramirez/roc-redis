@@ -3,7 +3,7 @@
 The README table is printed directly by the benchmark controller
 (`just benchmark-all`; rows are experiments, columns are clients). The current
 figures come from a position-balanced campaign taken on this checkout on
-2026-09-10 (`../benchmarks/results/2026-09-10-seven-workload-speed-quiet.jsonl`),
+2026-09-11 (`../benchmarks/results/2026-09-11-seven-workload-speed-quiet.jsonl`),
 covering all seven workloads.
 
 Throughput is 10,000 operations divided by median elapsed time across 50
@@ -14,13 +14,13 @@ operation.
 
 | Experiment | roc-redis | redis-py | go-redis | redis-rs | hiredis |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `ping_sequential` | 15,024 | 12,537 | 13,896 | 14,981 | 14,960 |
-| `set_get_sequential` | 7,458 | 6,091 | 6,950 | 7,400 | 7,392 |
-| `incr_sequential` | 14,874 | 12,548 | 13,892 | 14,814 | 14,787 |
-| `ping_pipeline` | 957,579 | 352,223 | 1,075,811 | 1,225,787 | 1,218,100 |
-| `mset_mget_sequential` | 7,242 | 5,751 | 6,910 | 7,406 | 7,462 |
-| `hash_roundtrip_sequential` | 7,291 | 5,987 | 6,937 | 7,385 | 7,375 |
-| `set_get_pipeline` | 459,252 | 117,322 | 456,467 | 468,426 | 577,383 |
+| `ping_sequential` | 14,836 | 12,475 | 13,839 | 14,766 | 14,728 |
+| `set_get_sequential` | 7,362 | 6,079 | 6,909 | 7,293 | 7,309 |
+| `incr_sequential` | 14,683 | 12,578 | 13,831 | 14,568 | 14,598 |
+| `ping_pipeline` | 982,800 | 358,179 | 1,050,813 | 1,207,349 | 1,226,768 |
+| `mset_mget_sequential` | 7,097 | 5,758 | 6,817 | 7,303 | 7,374 |
+| `hash_roundtrip_sequential` | 7,180 | 5,963 | 6,887 | 7,283 | 7,296 |
+| `set_get_pipeline` | 447,828 | 119,411 | 439,952 | 467,049 | 475,692 |
 
 Redis 8.10.1; aarch64-darwin; persistent loopback TCP; RESP2; 32-byte binary
 values; 1,000 warmup operations; 10,000 measured operations/sample. Five samples
@@ -36,12 +36,23 @@ confidence intervals.
 
 The community-preview default is the dev backend, not speed. A dev-backend
 cross-check with identical parameters
-(`../benchmarks/results/2026-09-10-seven-workload-quiet.jsonl`) stays within a
-few percent on the sequential rows (`ping_sequential` 14,651 vs 15,024) and runs
-about 2.5–3× lower on the pipelined rows (`ping_pipeline` 395,890 vs 957,579;
-`set_get_pipeline` 152,413 vs 459,252). Sequential workloads are network
-round-trip bound, so the backend barely moves them; pipelines expose client-side
-CPU.
+(`../benchmarks/results/2026-09-11-seven-workload-quiet.jsonl`) stays within
+about 4% on the single-command sequential rows (`ping_sequential` 14,260 vs
+14,836), widens to roughly 10% on the two-command sequential rows
+(`mset_mget_sequential` 6,356 vs 7,097), and falls far behind on the pipelined
+rows (`ping_pipeline` 460,394 vs 982,800, 2.1×; `set_get_pipeline` 174,442 vs
+447,828, 2.6×). Sequential workloads are network round-trip bound, so the
+backend barely moves them; pipelines amortize the network away and expose
+client-side CPU.
+
+The decoder work on 2026-09-11 (folding numeric headers in one pass, and
+extending the line fast path to every line kind with a single-step CRLF finish)
+raised dev pipelined throughput by about 15% — `ping_pipeline` 395,890 ->
+460,394 and `set_get_pipeline` 152,413 -> 174,442 against the 2026-09-10
+campaign — while leaving the speed figures unchanged within noise. That is the
+expected shape: those changes remove per-byte record rebuilds that the
+optimizing backend already eliminated, so they close part of the dev gap and add
+nothing on speed.
 
 Do not interpret close results as significant differences, this campaign as a
 general language ranking, or these medians as confidence intervals. Numbers were
