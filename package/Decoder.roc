@@ -359,7 +359,7 @@ consume_chunk = |{ chunk, completed, decoder, index }| {
 	var $index = index
 	while $index < chunk.len() {
 		match $decoder.state {
-			ReadingLine(line) if !line.saw_carriage_return and (line.kind == SimpleLine or line.kind == ErrorLine) and $decoder.offset < $decoder.limits.max_frame_length and line.content.len() < $decoder.limits.max_line_length => {
+			ReadingLine(line) if !line.saw_carriage_return and $decoder.offset < $decoder.limits.max_frame_length and line.content.len() < $decoder.limits.max_line_length => {
 				available = chunk.len() - $index
 				frame_budget = $decoder.limits.max_frame_length - $decoder.offset
 				line_budget = $decoder.limits.max_line_length - line.content.len()
@@ -372,11 +372,34 @@ consume_chunk = |{ chunk, completed, decoder, index }| {
 					}
 					$count = $count + 1
 				}
-				if $count > 0 {
-					# Only received non-terminator bytes are copied. Leave delimiters
-					# and limit errors to the scalar path so offsets stay identical.
-					content = line.content.concat(chunk.sublist({ start: $index, len: $count }))
-					$decoder = { ..$decoder, state: ReadingLine({ ..line, content }), offset: $decoder.offset + $count }
+				# Only received non-terminator bytes are copied. Limit errors stay on
+				# the scalar path so offsets stay identical.
+				content = if $count > 0 {
+					line.content.concat(chunk.sublist({ start: $index, len: $count }))
+				} else {
+					line.content
+				}
+				content_offset = $decoder.offset + $count
+				carriage_return_at = $index + $count
+				line_feed_at = carriage_return_at + 1
+				if line_feed_at < chunk.len() and get_or_zero(chunk, carriage_return_at) == '\r' and get_or_zero(chunk, line_feed_at) == '\n' and content_offset + 1 < $decoder.limits.max_frame_length {
+					# The whole line is present, so finish it without rebuilding the
+					# decoder once per terminator byte. Both terminator bytes stay
+					# inside the frame budget checked above.
+					finished = { ..$decoder, state: AwaitType, offset: content_offset + 2 }
+					match finish_line(finished, { ..line, content }) {
+						StepContinue(next_decoder) => {
+							$decoder = next_decoder
+						}
+						StepEmitted({ decoder: next_decoder, value }) => {
+							$decoder = next_decoder
+							$completed = $completed.append(value)
+						}
+						StepFailed(error) => return Failed({ completed: $completed, error })
+					}
+					$index = line_feed_at + 1
+				} else if $count > 0 {
+					$decoder = { ..$decoder, state: ReadingLine({ ..line, content }), offset: content_offset }
 					$index = $index + $count
 				} else {
 					match step_byte($decoder, get_or_zero(chunk, $index)) {
