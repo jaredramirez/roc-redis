@@ -270,8 +270,6 @@ SignedDecimalResult : [SignedDecimal(I64), SignedDecimalInvalid(U64)]
 
 LengthResult : [LengthInvalid(U64), LengthNull, LengthValue(U64)]
 
-DigitResult : [DigitInvalid(U64), DigitsValid]
-
 ## State supplied to the chunk loop. Bulk payloads are appended in spans, while
 ## framing bytes use the byte-level state machine for precise error offsets.
 ChunkState : {
@@ -681,18 +679,7 @@ parse_signed_decimal = |bytes|
 		if digits_start >= bytes.len() {
 			SignedDecimalInvalid(digits_start)
 		} else {
-			match validate_decimal_digits(bytes, digits_start) {
-				DigitInvalid(index) => SignedDecimalInvalid(index)
-				DigitsValid =>
-					match Str.from_utf8(bytes) {
-						Err(_) => SignedDecimalInvalid(0)
-						Ok(text) =>
-							match I64.from_str(text) {
-								Err(_) => SignedDecimalInvalid(bytes.len() - 1)
-								Ok(value) => SignedDecimal(value)
-							}
-						}
-				}
+			fold_signed(bytes, digits_start, 0, Bool.False, first == 45)
 		}
 	}
 
@@ -703,31 +690,90 @@ parse_length = |bytes|
 	} else if bytes.is_empty() {
 		LengthInvalid(0)
 	} else {
-		match validate_decimal_digits(bytes, 0) {
-			DigitInvalid(index) => LengthInvalid(index)
-			DigitsValid =>
-				match Str.from_utf8(bytes) {
-					Err(_) => LengthInvalid(0)
-					Ok(text) =>
-						match U64.from_str(text) {
-							Err(_) => LengthInvalid(bytes.len() - 1)
-							Ok(value) => LengthValue(value)
-						}
-					}
-			}
+		fold_length(bytes, 0, 0, Bool.False)
 	}
 
-validate_decimal_digits : List(U8), U64 -> DigitResult
-validate_decimal_digits = |bytes, index|
+## Largest value that can still absorb another digit without overflowing U64.
+## The final digit is compared separately so the fold never wraps.
+max_u64_before_shift : U64
+max_u64_before_shift = 1_844_674_407_370_955_161
+
+max_u64_final_digit : U64
+max_u64_final_digit = 5
+
+## A negative integer accepts one more magnitude than a positive one, so -2^63
+## parses even though +2^63 does not.
+max_negative_magnitude : U64
+max_negative_magnitude = 9_223_372_036_854_775_808
+
+max_positive_magnitude : U64
+max_positive_magnitude = 9_223_372_036_854_775_807
+
+## Fold the digits in the same pass that validates them. Overflow is carried to
+## the end rather than returned immediately so that a later non-digit still
+## reports its own index, matching the previous validate-then-parse order.
+fold_signed : List(U8), U64, U64, Bool, Bool -> SignedDecimalResult
+fold_signed = |bytes, index, magnitude, overflowed, negative|
 	if index >= bytes.len() {
-		DigitsValid
+		limit = if negative {
+			max_negative_magnitude
+		} else {
+			max_positive_magnitude
+		}
+		if overflowed or magnitude > limit {
+			SignedDecimalInvalid(bytes.len() - 1)
+		} else if negative {
+			SignedDecimal(negated(magnitude))
+		} else {
+			SignedDecimal(magnitude.to_i64_wrap())
+		}
 	} else {
 		byte = get_or_zero(bytes, index)
-		if byte >= 48 and byte <= 57 {
-			validate_decimal_digits(bytes, index + 1)
+		if byte < 48 or byte > 57 {
+			SignedDecimalInvalid(index)
+		} else if overflowed {
+			fold_signed(bytes, index + 1, magnitude, Bool.True, negative)
 		} else {
-			DigitInvalid(index)
+			digit = (byte - 48).to_u64()
+			if magnitude > max_u64_before_shift or (magnitude == max_u64_before_shift and digit > max_u64_final_digit) {
+				fold_signed(bytes, index + 1, 0, Bool.True, negative)
+			} else {
+				fold_signed(bytes, index + 1, magnitude * 10 + digit, Bool.False, negative)
+			}
 		}
+	}
+
+fold_length : List(U8), U64, U64, Bool -> LengthResult
+fold_length = |bytes, index, value, overflowed|
+	if index >= bytes.len() {
+		if overflowed {
+			LengthInvalid(bytes.len() - 1)
+		} else {
+			LengthValue(value)
+		}
+	} else {
+		byte = get_or_zero(bytes, index)
+		if byte < 48 or byte > 57 {
+			LengthInvalid(index)
+		} else if overflowed {
+			fold_length(bytes, index + 1, value, Bool.True)
+		} else {
+			digit = (byte - 48).to_u64()
+			if value > max_u64_before_shift or (value == max_u64_before_shift and digit > max_u64_final_digit) {
+				fold_length(bytes, index + 1, 0, Bool.True)
+			} else {
+				fold_length(bytes, index + 1, value * 10 + digit, Bool.False)
+			}
+		}
+	}
+
+## -2^63 has no positive I64 counterpart, so produce it directly.
+negated : U64 -> I64
+negated = |magnitude|
+	if magnitude == max_negative_magnitude {
+		-9_223_372_036_854_775_808
+	} else {
+		0 - magnitude.to_i64_wrap()
 	}
 
 header_at : U64, U64 -> U64
