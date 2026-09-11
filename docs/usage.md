@@ -39,9 +39,11 @@ requires only a write capability, not a full reply-reading connection.
 
 A binary-safe, platform-agnostic Redis client package for Roc.
 
-**Community preview.** Targets `nightly-2026-09-07-14d9829` and RESP2. Use the
-dev backend by default; speed and size remain experimental despite passing
-the recorded qualification checks. The API is open to feedback before a stable
+**Community preview.** Targets `nightly-2026-09-07-14d9829` and RESP2. Dev is
+the default backend; speed and size remain experimental despite passing the
+recorded qualification checks. Dev is much slower for pipelined workloads, where
+speed is roughly 2.1-2.6x faster; sequential workloads land within about 4%
+because they wait on the network rather than the client. The API is open to feedback before a stable
 release. No RESP3, automatic retries, cluster routing, or connection pool is included.
 
 The active CLI examples/tools use basic-cli `0.23.0-rc1`; webserver examples use
@@ -200,9 +202,10 @@ cleanup are outside the timed regions. Raw schema-v2 samples include exact
 client and Redis versions, content-derived Nix source provenance, target
 system, and execution order, and can be retained with `--jsonl`. Use
 `--all-order-rotations` (or `just benchmark-all`) for one Roc-orchestrated
-campaign containing ten position-balanced subject orders. The Roc subject currently uses the
-supported dev backend, so these numbers characterize the current toolchain and
-must not be presented as optimized Roc production performance. See
+campaign containing ten position-balanced subject orders. The published table uses the
+experimental speed backend and retains a dev cross-check beside it, so these
+numbers characterize the current toolchain and must not be presented as a
+language ranking. See
 [benchmarks/README.md](../benchmarks/README.md) for the exact workload and timer
 caveats, and [perf.md](../perf.md) for results, tradeoffs, and future tuning guidance.
 

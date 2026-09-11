@@ -1,7 +1,9 @@
 # Trying 0.1.0-rc2
 
 Use the release's exact content-addressed archive URL with Roc
-`nightly-2026-09-07-14d9829`. The dev backend is recommended.
+`nightly-2026-09-07-14d9829`. The dev backend is recommended for a
+first run; it is much slower for pipelined workloads, where the experimental
+speed backend is roughly 2.1-2.6x faster.
 
 For now, use the checkout's runnable examples:
 

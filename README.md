@@ -5,8 +5,11 @@ and RESP2 decoding; your platform supplies the byte-stream effects.
 
 [API documentation (development / main)](https://jaredramirez.github.io/roc-redis/)
 
-**Community preview:** targets `nightly-2026-09-07-14d9829`. Use the dev backend
-by default; speed and size remain experimental. The API is open to feedback.
+**Community preview:** targets `nightly-2026-09-07-14d9829`. Dev is the default
+backend; speed and size remain experimental. **Dev is much slower once you
+pipeline** — speed runs 2.1–2.6× faster on pipelined workloads, while sequential
+workloads land within about 4% because they wait on the network. See
+[Benchmarks](#benchmarks). The API is open to feedback.
 
 - Typed APIs for **405 commands across 18 families**, plus raw constructors.
 - Custom reply decoders, ordered pipelines, and distinct RESP2 null types.
