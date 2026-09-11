@@ -60,6 +60,12 @@ max_timeout_ms = 300_000
 key_ttl_ms : List(U8)
 key_ttl_ms = Str.to_utf8("86400001")
 
+## Built once. The pipelined PING check compares this against every reply in
+## the batch, so building it inside the loop would time allocation rather than
+## the client work the benchmark reports.
+pong_reply : Resp.Resp
+pong_reply = Resp.simple_utf8("PONG")
+
 binary_payload : List(U8)
 binary_payload = [
 	0,
@@ -463,7 +469,7 @@ run_ping! = |remaining, transport|
 	} else {
 		result = raw_request!(Command.ping(), transport)
 			? |error| BenchmarkFailed("PING: ${Str.inspect(error)}")
-		{} = require_response("PING", result, Resp.simple_utf8("PONG"))?
+		{} = require_response("PING", result, pong_reply)?
 		run_ping!(remaining - 1, transport)
 	}
 
@@ -512,7 +518,7 @@ run_ping_pipeline! = |remaining, batch_size, transport|
 		commands = List.repeat(Command.ping(), current_batch)
 		result = Execute.batch!(execution_config, Batch.all(commands.map(|command| Request.new(command, Reply.raw))), transport)
 			? |error| BenchmarkFailed("PING pipeline: ${Str.inspect(error)}")
-		if result.len() == current_batch and result.all(|response| response == Resp.simple_utf8("PONG")) {
+		if result.len() == current_batch and result.all(|response| response == pong_reply) {
 			run_ping_pipeline!(remaining - current_batch, batch_size, transport)
 		} else {
 			Err(BenchmarkFailed("PING pipeline returned ${result.len().to_str()} replies with an invalid value; expected ${current_batch.to_str()} PONG replies"))
