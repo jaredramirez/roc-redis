@@ -46,21 +46,21 @@ client = Client.{}
 
 main! : List(OsStr) => Try({}, [ExampleFailed(Str), Exit(I32), ..])
 main! = |_args| {
-  # Create a TCP stream
+    # Create a TCP stream
 	stream = Tcp.connect!("127.0.0.1", 6379, 2_000)
 		? |error| ExampleFailed("connect: ${Str.inspect(error)}")
 
-  # Create a ByteIo that reads and writes over the stream
+    # Create a ByteIo that reads and writes over the stream
 	byte_io = ByteIo.from_empty_eof({
 		read_bytes!: |max_bytes| stream.read_up_to!(max_bytes, 2_000),
 		write_all!: |bytes| stream.write!(bytes, 2_000),
 	})
 
-  # Create a re-usable connection that knows how to do IO via the transport
+    # Create a re-usable connection that knows how to do IO via the transport
 	connection = client.connect!(byte_io)
 		? |_| ExampleFailed("Redis handshake failed")
 
-  # Read a value
+    # Read a value
 	stored = connection.request!(Commands.Strings.get("example:greeting"))
 		? |error| ExampleFailed("GET: ${Str.inspect(error)}")
 	greeting = match stored {
@@ -68,7 +68,7 @@ main! = |_args| {
 		Absent => "Hello"
 	}
 
-  # Update a value
+    # Update a value
 	updated = Bytes.from_str("${greeting}!")
 	_ = connection.request!(
 		Commands.Strings.set("example:greeting", updated, { expiration: Seconds(60) }),
