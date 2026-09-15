@@ -1,6 +1,78 @@
 # Performance learnings and measurement guide
 
-## Current result: balanced bulk buffering and corrected batch probe
+## Current result: one-pass line decoding (September 11)
+
+The chunk loop already had a span fast path, but it was gated to simple and
+error lines, so integer replies and bulk/array length headers were decoded a
+byte at a time, rebuilding the whole `Decoder` record for every digit. Simple
+lines rebuilt it twice more for CR and LF. Two changes removed that work:
+numeric headers fold their value during the single pass that validates the
+digits instead of re-parsing through `Str.from_utf8` + `from_str`, and a line
+whose CRLF is already present finishes in one step, with the fast path now
+applying to every line kind.
+
+Offsets, limits, and error indices are unchanged. A split terminator, a bare LF,
+a CR followed by anything else, and every limit error still take the scalar path
+that produces the exact byte offset. The differential expectation in `Decoder`
+compares the chunked decoder against a scalar oracle over malformed frames,
+every line/frame limit combination, and every split point of the wire.
+
+Decoder-only medians on dev, two binaries run ABBA interleaved, ns/reply:
+
+| Reply kind | Before | Numeric fold | Line fast path |
+| --- | ---: | ---: | ---: |
+| Integer | 1109.6 | 1068.1 | 614.3 |
+| Bulk | 1796.0 | 1758.6 | 1320.9 |
+| Simple | 1528.8 | 1529.1 | 1220.7 |
+
+Simple replies parse no digits, so the flat simple column under the numeric fold
+is the control that makes the other two credible.
+
+### The gain is dev-only, which is the expected shape
+
+Live seven-workload campaigns before and after, identical parameters:
+
+| Workload | dev before | dev after | speed before | speed after |
+| --- | ---: | ---: | ---: | ---: |
+| `ping_pipeline` | 395,890 | 460,394 | 957,579 | 982,800 |
+| `set_get_pipeline` | 152,413 | 174,442 | 459,252 | 447,828 |
+
+Dev pipelined throughput rose about 15%; speed did not move outside run
+variation. These changes remove per-byte record rebuilds that the optimizing
+backend already eliminates, so they close part of the dev gap and add nothing on
+speed. The pipeline I/O pattern was never the problem: the adapter trace shows
+one `write_all!` per batch and one `read!` that drains every reply.
+
+### Rejected: single-pass encoding
+
+`encode_bounded` measures a batch with `pipeline_size` before allocating, then
+traverses again to write. Replacing that with one pass over a growable buffer was
+implemented and measured, and it was slower: `encode_pipeline` 436.7 -> 446.9
+ns/command, +2.4%, against untouched stages that drifted +0.3 to +2.0% in the
+same run. Buffer-growth copying offsets the saved traversal, so the change would
+have traded away measure-before-allocating for nothing. It was reverted. Do not
+re-attempt without a materially different buffer strategy.
+
+### Backend tiers
+
+| Workload | dev | speed | size |
+| --- | ---: | ---: | ---: |
+| `ping_pipeline` | 460,394 | 982,800 | 958,864 |
+| `set_get_pipeline` | 174,442 | 447,828 | 448,561 |
+
+Sequential workloads are network-round-trip bound and land within about 4% of
+each other on every backend. Pipelined workloads are not, and both optimizing
+backends roughly double dev. Do not read the size-versus-speed difference as a
+ranking: those campaigns ran three days apart, and the comparator clients, which
+did not change, moved by up to about 20% between them, which is larger than the
+gap being compared.
+
+Evidence, 1,750 records each:
+[speed](benchmarks/results/2026-09-11-seven-workload-speed-quiet.jsonl),
+[dev](benchmarks/results/2026-09-11-seven-workload-quiet.jsonl),
+[size](benchmarks/results/2026-09-14-seven-workload-size-quiet.jsonl).
+
+## Bulk buffering and the corrected batch probe (September 8)
 
 The September 8 follow-up replaces repeated whole-prefix concatenation for
 incomplete bulk payloads. A received prefix up to 4 KiB stays flat; beyond that,
@@ -60,6 +132,12 @@ run variation. The deliberately fragmented 4 KiB case remains approximately
 large-payload scaling failure. Preserve this remaining tradeoff in future
 comparisons.
 
+These decode-only timings predate the September 11 line-decoding work and have
+not been re-measured since. That work changed line handling only; the bulk
+payload path these numbers exercise was not modified, so the fragmented-bulk
+tradeoff is expected to stand, but treat the absolute figures as a September 8
+snapshot rather than a current one.
+
 [Final 120 timing samples](benchmarks/results/2026-09-08-balanced-prefix-decode-abba.jsonl)
 and [initial balance, 120 samples](benchmarks/results/2026-09-08-balanced-decode-abba.jsonl)
 retain source, seed, chunk size, iteration count, and validation. Initial
@@ -91,11 +169,19 @@ consumption on all three backends, and complete native Nix checks. Four
 100,000 cases each. Buffer-invariant expectations and the runtime large-payload
 matrix supplement the fuzz targets' bounded small payloads.
 
+Those counts are the September 8 snapshot. The same backend qualification runs
+in CI on every push across dev, speed, and size on both Linux and macOS, and
+passed on the revision the decoder work landed in; consult a recent run rather
+than this paragraph for current counts.
+
 ## Reading and reproducing the evidence
 
-The measurements above predate the behavior-preserving readability pass. They
-are not fresh results for the reformatted/generated source. No new speed claim
-is made by that pass.
+The September 8 measurements predate both the behavior-preserving readability
+pass and the September 11 line-decoding work. They are not fresh results for the
+reformatted/generated source, and no new speed claim is made by that pass. The
+current section above carries the newer decoder and live-campaign figures, and
+cross-language comparisons are no longer historical-only: the September 11 and
+14 campaigns cover all five clients on dev, speed, and size.
 
 - [Historical investigations and five-language comparison](docs/history/performance.md)
 - [Benchmark workload contracts](benchmarks/README.md)
