@@ -92,7 +92,7 @@ wraps a raw byte reader and writer into a transport that's used to create a conn
 `Client.{ config }` holds your configuration and session policy (set `auth`
 and `select_db`). `client.connect!(byte_io)` runs the AUTH/SELECT handshake
 and returns a ready `Connection`. For pooling, `client.attach` binds a reused
-socket without a handshake and `client.handshake!` initializes a freshly dialed one.
+socket without a handshake and `client.handshake!` initializes a fresh one.
 See the [minimal Zig pooling example](examples/pooling/README.md) to see how
 platform-owned pooling could work.
 
