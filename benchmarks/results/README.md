@@ -23,6 +23,7 @@ performance reports. Do not pool campaigns across compilers, variants, or worklo
 | Seven-workload, before decoder work | September 10 / dev | [Live, 1750](2026-09-10-seven-workload-quiet.jsonl) |
 | Seven-workload README source | September 11 / speed | [Live, 1750](2026-09-11-seven-workload-speed-quiet.jsonl) |
 | Seven-workload dev cross-check | September 11 / dev | [Live, 1750](2026-09-11-seven-workload-quiet.jsonl) |
+| Seven-workload size backend | September 14 / size | [Live, 1750](2026-09-14-seven-workload-size-quiet.jsonl) |
 
 Counts are JSONL records/events. The September 7 filenames identify measurement
 dates, not necessarily compiler dates. Every timed record includes variant and

@@ -54,6 +54,16 @@ expected shape: those changes remove per-byte record rebuilds that the
 optimizing backend already eliminated, so they close part of the dev gap and add
 nothing on speed.
 
+A size-backend campaign
+(`../benchmarks/results/2026-09-14-seven-workload-size-quiet.jsonl`) places that
+backend in the same optimized tier as speed rather than near dev: `ping_pipeline`
+958,864 and `set_get_pipeline` 448,561, against dev's 460,394 and 174,442. Do not
+read the remaining size-versus-speed difference as a ranking. That campaign ran
+three days after the speed one, and the unchanged comparator clients moved by up
+to about 20% between the two runs (hiredis `set_get_pipeline` 475,692 then
+586,441), which is larger than the gap being compared. Separating size from speed
+would need both in one campaign.
+
 Do not interpret close results as significant differences, this campaign as a
 general language ranking, or these medians as confidence intervals. Numbers were
 taken on one quiet host.
