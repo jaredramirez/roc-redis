@@ -36,9 +36,33 @@ release should link the exact source revision and identify the pinned compiler.
    message drafted in [COMMUNITY-FEEDBACK.md](COMMUNITY-FEEDBACK.md).
 
 The repository is public at `https://github.com/jaredramirez/roc-redis`.
-The maintainer approved preparing and publishing `0.1.0-rc1` on September 9 and
-`0.1.0-rc2` on September 10. Publication checks are recorded below. Do not
-replace an RC asset in place; publish another version if package contents change.
+The maintainer approved preparing and publishing `0.1.0-rc1` on September 9,
+`0.1.0-rc2` on September 10, and `0.1.0-rc3` on September 14. Publication checks
+are recorded below. Do not replace an RC asset in place; publish another version
+if package contents change.
+
+## 0.1.0-rc3 publication (September 14)
+
+- [Release](https://github.com/jaredramirez/roc-redis/releases/tag/0.1.0-rc3),
+  source `a6d8c18cf82cde84f0d4561521d51b251ba79123`.
+- The exact-revision [Linux/macOS CI run](https://github.com/jaredramirez/roc-redis/actions/runs/34914651570)
+  passed before the archive was published and before its URL was placed in the
+  installation example.
+- Published archive: `EHoKAC3XP1CBAjNUWYAbtZkRExBW1zRTTdeS4zoBAQ19.tar.zst`.
+  SHA-256: `fa1605747cff00b33f90df91ca947afa2a2610c69ac9c27a932a1f9eaad762e7`.
+  A checksum sidecar is attached; bundled LICENSE and NOTICE were compared with
+  the repository copies and are byte-for-byte identical. The asset was then
+  downloaded back from its public URL and its digest matched.
+- On Apple Silicon macOS, the no-server `INSTALL.md` app was copied to a fresh
+  temporary directory and checked, built (dev), and run with the raw pinned
+  compiler `nightly-2026-09-07-14d9829`, fresh `XDG_CACHE_HOME` and
+  `ROC_CACHE_DIR`, and the actual public release URL — not the project
+  cache-seeding wrapper and not a local package dependency. It checked and built
+  with zero errors and warnings and printed the GET command's parts.
+- rc3 supersedes rc2 because the package contents changed: the decoder folds
+  numeric headers in one pass and finishes a whole line in one step, with the
+  span fast path extended to every line kind. There are no API changes. rc1 and
+  rc2 remain published and unmodified.
 
 ## 0.1.0-rc2 publication (September 10)
 

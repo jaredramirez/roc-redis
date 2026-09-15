@@ -18,7 +18,7 @@ workloads land within about 4% because they wait on the network. See
 
 ## Get started
 
-The example below targets **0.1.0-rc2** and the pinned Roc nightly above.
+The example below targets **0.1.0-rc3** and the pinned Roc nightly above.
 Save it as `main.roc`. With Roc and Redis available (the checkout's
 `nix develop` supplies both), start disposable Redis in a separate terminal:
 
@@ -32,7 +32,7 @@ and saves it for 60 seconds:
 ```roc
 app [main!] {
 	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.23.0-rc1/3hT3SoHZ6qbEsa9qVFLUW3547U5LeoNd1KbpqLpz4r1i.tar.zst",
-	redis: "https://github.com/jaredramirez/roc-redis/releases/download/0.1.0-rc2/xob6JGzB3sHAE31nHg8acAASiRJtWecX5j43fuweP7J.tar.zst",
+	redis: "https://github.com/jaredramirez/roc-redis/releases/download/0.1.0-rc3/EHoKAC3XP1CBAjNUWYAbtZkRExBW1zRTTdeS4zoBAQ19.tar.zst",
 }
 
 import pf.Tcp
