@@ -11,7 +11,7 @@ and RESP2 decoding. Your platform supplies the byte-stream effects.
 - Examples for basic-cli and basic-webserver; the core depends on neither.
 
 **Dev backend is much slower for pipeline operations.** Speed runs 2.1–2.6x
-faster on pipelined workloads, while sequential workloads are comperative with
+faster on pipelined workloads, while sequential workloads are comparable with
 other languages. See [Benchmarks](#benchmarks). The API is open to feedback.
 
 ## Get started
@@ -28,7 +28,7 @@ Then put this in a roc file and run `roc --opt=dev main.roc`:
 ```roc
 app [main!] {
 	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.23.0-rc1/3hT3SoHZ6qbEsa9qVFLUW3547U5LeoNd1KbpqLpz4r1i.tar.zst",
-	redis: "https://github.com/jaredramirez/roc-redis/releases/download/0.1.0-rc3/EHoKAC3XP1CBAjNUWYAbtZkRExBW1zRTTdeS4zoBAQ19.tar.zst",
+	redis: "https://github.com/jaredramirez/roc-redis/releases/download/0.1.0-rc4/8BsZJKf5j58G6rxgggefDWqmgfdDkYmJbNUSTb8NvRfC.tar.zst",
 }
 
 import pf.Tcp
@@ -40,7 +40,7 @@ import redis.Commands
 import redis.Config
 import redis.ByteIo
 
-# Create a redi client. Client contains many fields with default values, but
+# Create a redis client. Client contains many fields with default values, but
 # since we are not overriding any of those values, we just leave it empty.
 client = Client.{}
 

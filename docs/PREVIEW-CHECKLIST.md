@@ -37,9 +37,35 @@ release should link the exact source revision and identify the pinned compiler.
 
 The repository is public at `https://github.com/jaredramirez/roc-redis`.
 The maintainer approved preparing and publishing `0.1.0-rc1` on September 9,
-`0.1.0-rc2` on September 10, and `0.1.0-rc3` on September 14. Publication checks
-are recorded below. Do not replace an RC asset in place; publish another version
+`0.1.0-rc2` on September 10, `0.1.0-rc3` on September 14, and `0.1.0-rc4` on
+September 15. Publication checks are recorded below. Do not replace an RC asset in place; publish another version
 if package contents change.
+
+## 0.1.0-rc4 publication (September 15)
+
+- [Release](https://github.com/jaredramirez/roc-redis/releases/tag/0.1.0-rc4),
+  source `db6a04b765db8b2aaa7f186494da7af4edf6c602`.
+- The exact-revision [Linux/macOS CI run](https://github.com/jaredramirez/roc-redis/actions/runs/34975329289)
+  passed before the archive was published and before its URL entered the
+  installation example.
+- Published archive: `8BsZJKf5j58G6rxgggefDWqmgfdDkYmJbNUSTb8NvRfC.tar.zst`.
+  SHA-256: `c6f6353d72036e2f0d2d359d02582b8d8783fffd2aad868eab996e9ce0157dd3`.
+  A checksum sidecar is attached; bundled LICENSE and NOTICE are byte-for-byte
+  identical to the repository copies, and the published asset was downloaded
+  back from its public URL with a matching digest.
+- On Apple Silicon macOS, a fresh temporary directory with empty
+  `XDG_CACHE_HOME` and `ROC_CACHE_DIR` used the raw pinned compiler
+  `nightly-2026-09-07-14d9829` against the actual public release URL, with no
+  cache-seeding wrapper and no local package dependency. It checked and built
+  with zero errors and warnings.
+- That consumer app deliberately exercises the renamed API rather than only
+  downloading it: it imports `redis.ByteIo`, builds one with
+  `ByteIo.from_empty_eof`, and asserts the empty-read-is-`End` fold by printing
+  `empty read folds to: End`. The archive contains `ByteIo.roc` and no
+  `Transport.roc`.
+- rc4 supersedes rc3 with a breaking rename: the `Transport` type is now
+  `ByteIo` and `Transport.from_bytes_io` is now `ByteIo.from_empty_eof`. No
+  behaviour changed. rc1 through rc3 remain published and unmodified.
 
 ## 0.1.0-rc3 publication (September 14)
 
