@@ -279,7 +279,7 @@ ensure_key_prefix! = |config|
 
 execution_config = RedisConfig.{ max_commands: 65_536 }
 
-raw_request! : Command.Command, Execute.Transport(read_err, write_err) => Try(Resp.Resp, [BenchmarkFailed(Str)])
+raw_request! : Command.Command, Execute.ByteIo(read_err, write_err) => Try(Resp.Resp, [BenchmarkFailed(Str)])
 raw_request! = |command, transport|
 	Execute.request!(execution_config, Request.new(command, Reply.raw), transport)
 		.map_err(|error| BenchmarkFailed(Str.inspect(error)))
@@ -291,7 +291,7 @@ run_with_cleanup! = |config| {
 	incr_key = "${config.key_prefix}:incr".to_utf8()
 	stream = Tcp.connect!(config.host, config.port, config.timeout_ms)
 		? |error| BenchmarkFailed("connect: ${Str.inspect(error)}")
-	transport : Execute.Transport(_, _)
+	transport : Execute.ByteIo(_, _)
 	transport = {
 		read!: |max_bytes|
 			stream.read_up_to!(max_bytes, config.timeout_ms)
@@ -358,7 +358,7 @@ cleanup_keys! : Config, List(U8), List(U8), List(U8) => Try({}, [BenchmarkFailed
 cleanup_keys! = |config, marker_key, set_key, incr_key| {
 	stream = Tcp.connect!(config.host, config.port, config.timeout_ms)
 		? |error| BenchmarkFailed("connect cleanup transport: ${Str.inspect(error)}")
-	transport : Execute.Transport(_, _)
+	transport : Execute.ByteIo(_, _)
 	transport = {
 		read!: |max_bytes|
 			stream.read_up_to!(max_bytes, config.timeout_ms)
@@ -377,7 +377,7 @@ cleanup_keys! = |config, marker_key, set_key, incr_key| {
 	}
 }
 
-run_benchmarks! : Config, Execute.Transport(read_err, write_err), List(U8), List(U8) => Try({}, [BenchmarkFailed(Str)])
+run_benchmarks! : Config, Execute.ByteIo(read_err, write_err), List(U8), List(U8) => Try({}, [BenchmarkFailed(Str)])
 run_benchmarks! = |config, transport, set_key, incr_key| {
 	mset_keys = mset_keys_for(config.key_prefix)
 	hash_key = "${config.key_prefix}:hash".to_utf8()
@@ -403,7 +403,7 @@ mset_keys_for = |prefix| [
 hash_fields : List(List(U8))
 hash_fields = ["field:0".to_utf8(), "field:1".to_utf8(), "field:2".to_utf8()]
 
-benchmark_ping_samples! : Config, U64, Execute.Transport(read_err, write_err) => Try({}, [BenchmarkFailed(Str)])
+benchmark_ping_samples! : Config, U64, Execute.ByteIo(read_err, write_err) => Try({}, [BenchmarkFailed(Str)])
 benchmark_ping_samples! = |config, sample, transport|
 	if sample > config.samples {
 		Ok({})
@@ -417,7 +417,7 @@ benchmark_ping_samples! = |config, sample, transport|
 		benchmark_ping_samples!(config, sample + 1, transport)
 	}
 
-benchmark_set_get_samples! : Config, U64, Execute.Transport(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
+benchmark_set_get_samples! : Config, U64, Execute.ByteIo(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
 benchmark_set_get_samples! = |config, sample, transport, key|
 	if sample > config.samples {
 		Ok({})
@@ -431,7 +431,7 @@ benchmark_set_get_samples! = |config, sample, transport, key|
 		benchmark_set_get_samples!(config, sample + 1, transport, key)
 	}
 
-benchmark_incr_samples! : Config, U64, Execute.Transport(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
+benchmark_incr_samples! : Config, U64, Execute.ByteIo(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
 benchmark_incr_samples! = |config, sample, transport, key|
 	if sample > config.samples {
 		Ok({})
@@ -447,7 +447,7 @@ benchmark_incr_samples! = |config, sample, transport, key|
 		benchmark_incr_samples!(config, sample + 1, transport, key)
 	}
 
-benchmark_pipeline_samples! : Config, U64, Execute.Transport(read_err, write_err) => Try({}, [BenchmarkFailed(Str)])
+benchmark_pipeline_samples! : Config, U64, Execute.ByteIo(read_err, write_err) => Try({}, [BenchmarkFailed(Str)])
 benchmark_pipeline_samples! = |config, sample, transport|
 	if sample > config.samples {
 		Ok({})
@@ -462,7 +462,7 @@ benchmark_pipeline_samples! = |config, sample, transport|
 		benchmark_pipeline_samples!(config, sample + 1, transport)
 	}
 
-run_ping! : U64, Execute.Transport(read_err, write_err) => Try({}, [BenchmarkFailed(Str)])
+run_ping! : U64, Execute.ByteIo(read_err, write_err) => Try({}, [BenchmarkFailed(Str)])
 run_ping! = |remaining, transport|
 	if remaining == 0 {
 		Ok({})
@@ -473,7 +473,7 @@ run_ping! = |remaining, transport|
 		run_ping!(remaining - 1, transport)
 	}
 
-run_set_get! : U64, Execute.Transport(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
+run_set_get! : U64, Execute.ByteIo(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
 run_set_get! = |remaining, transport, key|
 	if remaining == 0 {
 		Ok({})
@@ -489,7 +489,7 @@ run_set_get! = |remaining, transport, key|
 		run_set_get!(remaining - 1, transport, key)
 	}
 
-prepare_counter! : Execute.Transport(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
+prepare_counter! : Execute.ByteIo(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
 prepare_counter! = |transport, key| {
 	result = raw_request!(
 		RawStrings.set(key, Str.to_utf8("0"), [Str.to_utf8("PX"), key_ttl_ms]),
@@ -498,7 +498,7 @@ prepare_counter! = |transport, key| {
 	require_response("counter SET", result, Resp.simple_utf8("OK"))
 }
 
-run_incr! : U64, I64, Execute.Transport(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
+run_incr! : U64, I64, Execute.ByteIo(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
 run_incr! = |remaining, expected, transport, key|
 	if remaining == 0 {
 		Ok({})
@@ -509,7 +509,7 @@ run_incr! = |remaining, expected, transport, key|
 		run_incr!(remaining - 1, expected + 1, transport, key)
 	}
 
-run_ping_pipeline! : U64, U64, Execute.Transport(read_err, write_err) => Try({}, [BenchmarkFailed(Str)])
+run_ping_pipeline! : U64, U64, Execute.ByteIo(read_err, write_err) => Try({}, [BenchmarkFailed(Str)])
 run_ping_pipeline! = |remaining, batch_size, transport|
 	if remaining == 0 {
 		Ok({})
@@ -525,7 +525,7 @@ run_ping_pipeline! = |remaining, batch_size, transport|
 		}
 	}
 
-benchmark_mset_mget_samples! : Config, U64, Execute.Transport(read_err, write_err), List(List(U8)) => Try({}, [BenchmarkFailed(Str)])
+benchmark_mset_mget_samples! : Config, U64, Execute.ByteIo(read_err, write_err), List(List(U8)) => Try({}, [BenchmarkFailed(Str)])
 benchmark_mset_mget_samples! = |config, sample, transport, keys|
 	if sample > config.samples {
 		Ok({})
@@ -539,7 +539,7 @@ benchmark_mset_mget_samples! = |config, sample, transport, keys|
 		benchmark_mset_mget_samples!(config, sample + 1, transport, keys)
 	}
 
-run_mset_mget! : U64, Execute.Transport(read_err, write_err), List(List(U8)) => Try({}, [BenchmarkFailed(Str)])
+run_mset_mget! : U64, Execute.ByteIo(read_err, write_err), List(List(U8)) => Try({}, [BenchmarkFailed(Str)])
 run_mset_mget! = |remaining, transport, keys|
 	if remaining == 0 {
 		Ok({})
@@ -557,7 +557,7 @@ run_mset_mget! = |remaining, transport, keys|
 		run_mset_mget!(remaining - 1, transport, keys)
 	}
 
-benchmark_hash_roundtrip_samples! : Config, U64, Execute.Transport(read_err, write_err), List(U8), List(List(U8)) => Try({}, [BenchmarkFailed(Str)])
+benchmark_hash_roundtrip_samples! : Config, U64, Execute.ByteIo(read_err, write_err), List(U8), List(List(U8)) => Try({}, [BenchmarkFailed(Str)])
 benchmark_hash_roundtrip_samples! = |config, sample, transport, key, fields|
 	if sample > config.samples {
 		Ok({})
@@ -571,7 +571,7 @@ benchmark_hash_roundtrip_samples! = |config, sample, transport, key, fields|
 		benchmark_hash_roundtrip_samples!(config, sample + 1, transport, key, fields)
 	}
 
-run_hash_roundtrip! : U64, Execute.Transport(read_err, write_err), List(U8), List(List(U8)) => Try({}, [BenchmarkFailed(Str)])
+run_hash_roundtrip! : U64, Execute.ByteIo(read_err, write_err), List(U8), List(List(U8)) => Try({}, [BenchmarkFailed(Str)])
 run_hash_roundtrip! = |remaining, transport, key, fields|
 	if remaining == 0 {
 		Ok({})
@@ -601,7 +601,7 @@ require_hgetall_result = |actual, field_count|
 		response => Err(BenchmarkFailed("HGETALL returned ${describe_response(response)}, expected an array of ${(field_count * 2).to_str()} elements"))
 	}
 
-benchmark_set_get_pipeline_samples! : Config, U64, Execute.Transport(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
+benchmark_set_get_pipeline_samples! : Config, U64, Execute.ByteIo(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
 benchmark_set_get_pipeline_samples! = |config, sample, transport, key|
 	if sample > config.samples {
 		Ok({})
@@ -616,7 +616,7 @@ benchmark_set_get_pipeline_samples! = |config, sample, transport, key|
 		benchmark_set_get_pipeline_samples!(config, sample + 1, transport, key)
 	}
 
-run_set_get_pipeline! : U64, U64, Execute.Transport(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
+run_set_get_pipeline! : U64, U64, Execute.ByteIo(read_err, write_err), List(U8) => Try({}, [BenchmarkFailed(Str)])
 run_set_get_pipeline! = |remaining, batch_size, transport, key|
 	if remaining == 0 {
 		Ok({})

@@ -9,7 +9,7 @@ import pf.Stdout
 import pf.OsStr exposing [OsStr]
 import redis.Commands
 import redis.Client
-import redis.Transport
+import redis.ByteIo
 
 client = Client.{}
 
@@ -18,12 +18,12 @@ main! = |_args| {
 	stream = Tcp.connect!("127.0.0.1", 6379, 2_000)
 		? |error| ExampleFailed("connect: ${Str.inspect(error)}")
 
-	transport = Transport.from_bytes_io({
+	byte_io = ByteIo.from_empty_eof({
 		read_bytes!: |max_bytes| stream.read_up_to!(max_bytes, 2_000),
 		write_all!: |bytes| stream.write!(bytes, 2_000),
 	})
 
-	connection = client.connect!(transport)
+	connection = client.connect!(byte_io)
 		? |_| ExampleFailed("Redis handshake failed")
 
 	pong = connection.request!(Commands.Session.ping())

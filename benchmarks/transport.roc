@@ -91,7 +91,7 @@ main! = |args| {
 	Ok({})
 }
 
-traced : Tcp.Stream, Str -> Execute.Transport([TraceFailed(Str)], [TraceFailed(Str)])
+traced : Tcp.Stream, Str -> Execute.ByteIo([TraceFailed(Str)], [TraceFailed(Str)])
 traced = |stream, workload| {
 	read!: |limit| {
 		bytes = stream.read_up_to!(limit, 2000) ? |error| TraceFailed(Str.inspect(error))

@@ -12,7 +12,7 @@ import redis.Resp
 ## Live semantic contracts on the one random key already owned by basic_cli.
 ## Type replacement and TTL installation commit atomically in MULTI/EXEC.
 TypedCases :: [].{
-	run! : Bytes.Bytes, Config.Config, Execute.Transport(read_error, write_error) => Try({}, Str)
+	run! : Bytes.Bytes, Config.Config, Execute.ByteIo(read_error, write_error) => Try({}, Str)
 	run! = |key, config, transport| {
 		members = NonEmpty.new(Bytes.from_str("a"), ["b"])
 		replace!(key, Commands.Sets.sadd(key, members).map(|_| {}), config, transport)?
@@ -87,7 +87,7 @@ assert_reply! = |request, expected, config, transport| {
 	}
 }
 
-replace! : Bytes.Bytes, Request.Request({}, Reply.Error), Config.Config, Execute.Transport(read_error, write_error) => Try({}, Str)
+replace! : Bytes.Bytes, Request.Request({}, Reply.Error), Config.Config, Execute.ByteIo(read_error, write_error) => Try({}, Str)
 replace! = |key, initializer, config, transport| {
 	requests = [
 		Commands.Keyspace.del(NonEmpty.new(key, [])).map(|_| {}),
@@ -103,7 +103,7 @@ replace! = |key, initializer, config, transport| {
 	}
 }
 
-available! : Bytes.Bytes, Config.Config, Execute.Transport(read_error, write_error) => Try(Bool, Str)
+available! : Bytes.Bytes, Config.Config, Execute.ByteIo(read_error, write_error) => Try(Bool, Str)
 available! = |name, config, transport| {
 	request = Request.new(
 		Command.new("COMMAND", ["INFO", name]),

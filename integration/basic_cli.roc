@@ -25,7 +25,7 @@ import redis.Execute
 import redis.NonEmpty
 import redis.Reply
 import redis.Request
-import redis.Transport
+import redis.ByteIo
 import TypedCases
 
 io_idle_timeout_ms : U64
@@ -46,8 +46,8 @@ main! = |args| {
 
 	stream = Tcp.connect!(target.host, target.port, io_idle_timeout_ms) ? |error| IntegrationFailed("connect: ${Str.inspect(error)}")
 
-	transport : Execute.Transport(_, _)
-	transport = Transport.from_bytes_io({
+	transport : Execute.ByteIo(_, _)
+	transport = ByteIo.from_empty_eof({
 		read_bytes!: |max_bytes| stream.read_up_to!(max_bytes, io_idle_timeout_ms),
 		write_all!: |bytes| stream.write!(bytes, io_idle_timeout_ms),
 	})

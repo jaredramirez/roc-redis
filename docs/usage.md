@@ -6,15 +6,15 @@ Create a client from validated config once, then bind each connected stream:
 
 ```roc
 import redis.Client
-import redis.Transport
+import redis.ByteIo
 
 client = Client.{ config }
 
-transport = Transport.from_bytes_io({
+byte_io = ByteIo.from_empty_eof({
     read_bytes!: |max_bytes| stream.read_up_to!(max_bytes, 2_000),
     write_all!: |bytes| stream.write!(bytes, 2_000),
 })
-connection = client.connect!(transport)?
+connection = client.connect!(byte_io)?
 pong = connection.request!(Commands.Session.ping())?
 results = connection.batch!(batch)?
 ```
@@ -22,8 +22,8 @@ results = connection.batch!(batch)?
 `Client` holds the validated config plus optional session policy (the `auth` and
 `select_db` fields). `connect!` runs the AUTH/SELECT handshake and returns a `Connection`;
 for pooling, `client.attach` binds a reused socket with no I/O and `client.handshake!`
-initializes a fresh one. `Transport.from_bytes_io` folds the raw-reader adapter (an
-empty read means end of stream); `Transport.new` takes an explicit `Data`/`End` reader.
+initializes a fresh one. `ByteIo.from_empty_eof` folds the raw-reader adapter (an
+empty read means end of stream); `ByteIo.new` takes an explicit `Data`/`End` reader.
 
 `Connection` is a transparent nominal record. It delegates to the same execution
 logic as the unbound `Execute.request!` and `Execute.batch!` forms documented
@@ -269,18 +269,18 @@ the application's earlier command/batch construction or concurrent exchanges.
 
 ## Supplying a transport
 
-`Execute.Transport` specifies semantics, not a networking implementation.
-`Transport.from_bytes_io` builds one from a raw byte reader and writer, folding
+`Execute.ByteIo` specifies semantics, not a networking implementation.
+`ByteIo.from_empty_eof` builds one from a raw byte reader and writer, folding
 the empty-is-`End` adapter that every integration otherwise repeats:
 
 ```roc
-transport = Transport.from_bytes_io({
+byte_io = ByteIo.from_empty_eof({
     read_bytes!: |max_bytes| stream.read_up_to!(max_bytes, idle_timeout_ms),
     write_all!: |bytes| stream.write!(bytes, idle_timeout_ms),
 })
 ```
 
-`Transport.new` takes a reader that already yields `Data`/`End` when the platform
+`ByteIo.new` takes a reader that already yields `Data`/`End` when the platform
 distinguishes a definitive EOF from a short read itself.
 
 `Data` contains 1 through `max_bytes` bytes. `End` means definitive EOF; a

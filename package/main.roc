@@ -33,7 +33,7 @@ package
 		Streams,
 		Strings,
 		Transactions,
-		Transport,
+		ByteIo,
 		VectorSets,
 	]
 	{

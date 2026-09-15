@@ -21,7 +21,7 @@ import redis.Batch
 import redis.Bytes
 import redis.Client
 import redis.Commands
-import redis.Transport
+import redis.ByteIo
 
 Context : {
 	redis_host : Str,
@@ -56,7 +56,7 @@ respond! = |request, context| {
 	stream = Tcp.connect!(context.redis_host, context.redis_port)
 		? |error| ServerErr("connect to Redis: ${Tcp.connect_err_to_str(error)}")
 
-	transport = Transport.from_bytes_io({
+	transport = ByteIo.from_empty_eof({
 		read_bytes!: |max_bytes| stream.read_up_to!(max_bytes),
 		write_all!: |bytes| stream.write!(bytes),
 	})

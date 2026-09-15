@@ -16,7 +16,7 @@ See `package/Execute.roc`, `package/Request.roc`, and the two connector examples
 transport record; repeated calls carry config and transport explicitly. Precise
 error categories can make common application handling verbose.
 
-**Resolved:** `Transport.from_bytes_io` folds the empty-is-End adapter, and
+**Resolved:** `ByteIo.from_empty_eof` folds the empty-is-End adapter, and
 `Client` binds config once, so callers hold a client and call `client.connect!`
 or `client.attach` instead of threading config and transport per call — this
 answers the bound-sender question below. `Execute.disposition` maps the error

@@ -33,7 +33,7 @@ Client := {
 	## Bind a live transport into a Connection. Pure: no I/O and no handshake.
 	## Use for a reused socket whose session is already established, or when you
 	## will run `handshake!` yourself.
-	attach : Client, Execute.Transport(read_err, write_err) -> Connection.Connection(read_err, write_err)
+	attach : Client, Execute.ByteIo(read_err, write_err) -> Connection.Connection(read_err, write_err)
 	attach = |client, transport| Connection.open(client.config, transport)
 
 	## Run the session handshake (AUTH then SELECT, as configured) over an
@@ -56,7 +56,7 @@ Client := {
 
 	## `attach` then `handshake!`. The one obvious path for a single, fresh
 	## connection; pooling code drops to `attach`/`handshake!` directly.
-	connect! : Client, Execute.Transport(read_err, write_err) => Try(Connection.Connection(read_err, write_err), HandshakeError(read_err, write_err))
+	connect! : Client, Execute.ByteIo(read_err, write_err) => Try(Connection.Connection(read_err, write_err), HandshakeError(read_err, write_err))
 	connect! = |client, transport| {
 		connection = client.attach(transport)
 		client.handshake!(connection)?

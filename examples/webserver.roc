@@ -11,7 +11,7 @@ import pf.Tcp
 import http.Response
 import redis.Commands
 import redis.Client
-import redis.Transport
+import redis.ByteIo
 
 Context : {}
 
@@ -25,11 +25,11 @@ respond! : Server.Request, Context => Try(Server.Outcome, [ServerErr(Str), ..])
 respond! = |_request, _context| {
 	stream = Tcp.connect!("127.0.0.1", 6379)
 		? |error| ServerErr(Tcp.connect_err_to_str(error))
-	transport = Transport.from_bytes_io({
+	byte_io = ByteIo.from_empty_eof({
 		read_bytes!: |max_bytes| stream.read_up_to!(max_bytes),
 		write_all!: |bytes| stream.write!(bytes),
 	})
-	connection = client.connect!(transport)
+	connection = client.connect!(byte_io)
 		? |_| ServerErr("Redis handshake failed")
 	pong = connection.request!(Commands.Session.ping())
 		? |_| ServerErr("Redis PING failed")

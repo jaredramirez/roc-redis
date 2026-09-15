@@ -11,9 +11,9 @@ import Request
 ## when no session policy (auth/db) is involved.
 Connection(read_err, write_err) := {
 	config : Config.Config,
-	transport : Execute.Transport(read_err, write_err),
+	transport : Execute.ByteIo(read_err, write_err),
 }.{
-	open : Config.Config, Execute.Transport(read_err, write_err) -> Connection(read_err, write_err)
+	open : Config.Config, Execute.ByteIo(read_err, write_err) -> Connection(read_err, write_err)
 	open = |config, transport| Connection.{ config, transport }
 
 	request! : Connection(read_err, write_err), Request.Request(value, decode_err) => Try(value, Execute.Error(read_err, write_err, decode_err))

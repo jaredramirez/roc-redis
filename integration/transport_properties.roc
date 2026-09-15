@@ -88,7 +88,7 @@ fault_prefix_case! = |completed, fault| {
 	}
 	requests = List.repeat(integer_request({}), expected)
 	expected_write = ping_wire(expected)
-	transport : Execute.Transport(_, _)
+	transport : Execute.ByteIo(_, _)
 	transport = {
 		write_all!: |bytes| if bytes == expected_write Ok({}) else Err(WrongWire),
 		read!: |max_bytes| fault_read(prefix, budget, fault, max_bytes),
@@ -134,7 +134,7 @@ response_limit_case! = |completed| {
 		Ok(value) => value
 		Err(_) => return Bool.False
 	}
-	transport : Execute.Transport(_, _)
+	transport : Execute.ByteIo(_, _)
 	transport = {
 		write_all!: |bytes| if bytes == ping_wire(expected) Ok({}) else Err(WrongWire),
 		read!: |max_bytes| {
@@ -161,7 +161,7 @@ semantic_failure_case! = |failure_index| {
 		Ok(value) => value
 		Err(_) => return Bool.False
 	}
-	transport : Execute.Transport(_, _)
+	transport : Execute.ByteIo(_, _)
 	transport = {
 		write_all!: |bytes| if bytes == ping_wire(count) Ok({}) else Err(WrongWire),
 		read!: |_| Ok(Data(wire)),
@@ -210,7 +210,7 @@ fault_config = |commands, budget| {
 
 command_limit_rejection! : {} => Bool
 command_limit_rejection! = |_| {
-	transport : Execute.Transport(_, _)
+	transport : Execute.ByteIo(_, _)
 	transport = { write_all!: |_| Err(WriteMustNotRun), read!: |_| Err(ReadMustNotRun) }
 	match Execute.batch!(one_command_config, Batch.each(List.repeat(integer_request({}), 2)), transport) {
 		Err(RequestRejected(CommandLimitExceeded({ actual, limit }))) => actual == 2 and limit == 1
@@ -220,7 +220,7 @@ command_limit_rejection! = |_| {
 
 request_limit_rejection! : {} => Bool
 request_limit_rejection! = |_| {
-	transport : Execute.Transport(_, _)
+	transport : Execute.ByteIo(_, _)
 	transport = { write_all!: |_| Err(WriteMustNotRun), read!: |_| Err(ReadMustNotRun) }
 	match Execute.batch!(short_request_config, Batch.each([integer_request({})]), transport) {
 		Err(RequestRejected(RequestByteLimitExceeded({ limit: actual }))) => actual == request_limit

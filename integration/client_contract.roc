@@ -103,7 +103,7 @@ test_long_fragmented_exchange! = |seed| {
 	wire = "$25000\r\n".to_utf8().concat($payload).concat(['\r', '\n'])
 	size = Positive.from_u64(wire.len()) ? |_| ContractFailed("fragmented wire must be non-empty")
 	policy = Config.{ read_size: size, max_response_bytes: size }
-	transport : Execute.Transport(_, _)
+	transport : Execute.ByteIo(_, _)
 	transport = {
 		write_all!: |_| Ok({}),
 		read!: |limit| if limit > 0 and limit <= wire.len() {
@@ -132,7 +132,7 @@ single_command_config = Config.{ max_commands: 1 }
 test_execute_failures! : {} => Try({}, [ContractFailed(Str), ..])
 test_execute_failures! = |_| {
 	request = Request.new(Command.ping(), Reply.simple)
-	read_failure : Execute.Transport(_, _)
+	read_failure : Execute.ByteIo(_, _)
 	read_failure = { write_all!: |_| Ok({}), read!: |_| Err(TimedOut) }
 	match connection_request!(execution_config, request, read_failure) {
 		Err(ExchangeFailed(ReadFailed(TimedOut))) => {}
@@ -140,7 +140,7 @@ test_execute_failures! = |_| {
 			return fail("Execute lost the concrete read error")
 		}
 	}
-	eof : Execute.Transport(_, _)
+	eof : Execute.ByteIo(_, _)
 	eof = { write_all!: |_| Ok({}), read!: |_| Ok(End) }
 	match connection_request!(execution_config, request, eof) {
 		Err(ExchangeFailed(ConnectionClosed({ expected: 1, received: 0 }))) => {}
@@ -148,7 +148,7 @@ test_execute_failures! = |_| {
 			return fail("Execute did not distinguish clean EOF from read failure")
 		}
 	}
-	empty : Execute.Transport(_, _)
+	empty : Execute.ByteIo(_, _)
 	empty = { write_all!: |_| Ok({}), read!: |_| Ok(Data([])) }
 	match connection_request!(execution_config, request, empty) {
 		Err(ExchangeFailed(EmptyData)) => {}
@@ -156,7 +156,7 @@ test_execute_failures! = |_| {
 			return fail("Execute accepted an empty data read")
 		}
 	}
-	oversized : Execute.Transport(_, _)
+	oversized : Execute.ByteIo(_, _)
 	oversized = { write_all!: |_| Ok({}), read!: |_| Ok(Data("+PONG\r\n".to_utf8())) }
 	match connection_request!(short_read_config, request, oversized) {
 		Err(ExchangeFailed(ReadLimitExceeded({ actual: 7, limit: 3 }))) => {}
@@ -164,7 +164,7 @@ test_execute_failures! = |_| {
 			return fail("Execute accepted bytes exceeding the requested read size")
 		}
 	}
-	budget : Execute.Transport(_, _)
+	budget : Execute.ByteIo(_, _)
 	budget = {
 		write_all!: |_| Ok({}),
 		read!: |max_bytes| if max_bytes == 6 {
@@ -179,7 +179,7 @@ test_execute_failures! = |_| {
 			return fail("Execute read past its cumulative response budget")
 		}
 	}
-	untouched : Execute.Transport(_, _)
+	untouched : Execute.ByteIo(_, _)
 	untouched = { write_all!: |_| Err(WriteMustNotRun), read!: |_| Err(ReadMustNotRun) }
 	match connection_batch!(single_command_config, Batch.each([request, request]), untouched) {
 		Err(RequestRejected(CommandLimitExceeded({ actual: 2, limit: 1 }))) => {}
@@ -188,7 +188,7 @@ test_execute_failures! = |_| {
 		}
 	}
 	for suffix in ["+EXTRA\r\n", "+"] {
-		extra : Execute.Transport(_, _)
+		extra : Execute.ByteIo(_, _)
 		extra = { write_all!: |_| Ok({}), read!: |_| Ok(Data("+PONG\r\n${suffix}".to_utf8())) }
 		match connection_request!(execution_config, request, extra) {
 			Err(ExchangeFailed(UnexpectedData(_))) => {}
@@ -197,7 +197,7 @@ test_execute_failures! = |_| {
 			}
 		}
 	}
-	malformed : Execute.Transport(_, _)
+	malformed : Execute.ByteIo(_, _)
 	malformed = { write_all!: |_| Ok({}), read!: |_| Ok(Data("+PONG\r\n?".to_utf8())) }
 	match connection_batch!(execution_config, Batch.each([request, request]), malformed) {
 		Err(ExchangeFailed(ProtocolFailure({ completed: 1, .. }))) => {}
@@ -205,7 +205,7 @@ test_execute_failures! = |_| {
 			return fail("Execute lost the completed prefix on malformed protocol")
 		}
 	}
-	wrong_shape : Execute.Transport(_, _)
+	wrong_shape : Execute.ByteIo(_, _)
 	wrong_shape = { write_all!: |_| Ok({}), read!: |_| Ok(Data(":1\r\n".to_utf8())) }
 	match connection_request!(execution_config, request, wrong_shape) {
 		Err(ReplyDecodeFailure(UnexpectedReply(_))) => {}
@@ -225,7 +225,7 @@ test_execute_failures! = |_| {
 test_execute! : {} => Try({}, [ContractFailed(Str), ..])
 test_execute! = |_| {
 	request = Request.new(Command.ping(), Reply.simple)
-	transport : Execute.Transport(_, _)
+	transport : Execute.ByteIo(_, _)
 	transport = {
 		write_all!: |bytes| if bytes == Command.encode(Command.ping()) {
 			Ok({})
@@ -240,7 +240,7 @@ test_execute! = |_| {
 			return fail("Execute.request! did not return the decoded value")
 		}
 	}
-	untouched : Execute.Transport(_, _)
+	untouched : Execute.ByteIo(_, _)
 	untouched = { write_all!: |_| Err(WriteMustNotRun), read!: |_| Err(ReadMustNotRun) }
 	match connection_request!(tiny_execution_config, request, untouched) {
 		Err(RequestRejected(RequestByteLimitExceeded({ limit: 13 }))) => {}
@@ -254,7 +254,7 @@ test_execute! = |_| {
 			return fail("Execute.request! did not classify a failed write")
 		}
 	}
-	server_error : Execute.Transport(_, _)
+	server_error : Execute.ByteIo(_, _)
 	server_error = { write_all!: |_| Ok({}), read!: |_| Ok(Data("-ERR bad\r\n".to_utf8())) }
 	match connection_request!(execution_config, request, server_error) {
 		Err(ServerError(bytes)) if bytes == Bytes.from_str("ERR bad") => {}
@@ -269,7 +269,7 @@ test_execute! = |_| {
 			_ => Err(NotInteger)
 		},
 	)
-	batch_transport : Execute.Transport(_, _)
+	batch_transport : Execute.ByteIo(_, _)
 	batch_transport = {
 		write_all!: |bytes| if bytes == Command.encode_pipeline([Command.ping(), Command.ping(), Command.ping()]) {
 			Ok({})
@@ -322,7 +322,7 @@ test_migrated_regressions! : {} => Try({}, [ContractFailed(Str), ..])
 test_migrated_regressions! = |_| {
 	request = Request.new(Command.ping(), Reply.simple)
 	for ended in [False, True] {
-		transport : Execute.Transport(_, _)
+		transport : Execute.ByteIo(_, _)
 		transport = {
 			write_all!: |_| Ok({}),
 			read!: |limit| match limit {
@@ -342,13 +342,13 @@ test_migrated_regressions! = |_| {
 			_ => return fail("split read lost its decoder state or EOF position")
 		}
 	}
-	bulk_transport : Execute.Transport(_, _)
+	bulk_transport : Execute.ByteIo(_, _)
 	bulk_transport = { write_all!: |_| Ok({}), read!: |_| Ok(Data("$2\r\nhi\r\n".to_utf8())) }
 	match connection_request!(bulk_limit_config, request, bulk_transport) {
 		Err(ExchangeFailed(ProtocolFailure({ completed: 0, error: BulkLengthLimitExceeded({ actual: 2, limit: 1, .. }) }))) => {}
 		_ => return fail("configured decoder bulk bound was not enforced through Execute")
 	}
-	budget_transport : Execute.Transport(_, _)
+	budget_transport : Execute.ByteIo(_, _)
 	budget_transport = {
 		write_all!: |_| Ok({}),
 		read!: |limit| if limit == 9 {
@@ -363,7 +363,7 @@ test_migrated_regressions! = |_| {
 	}
 	binary = [0, '\r', '\n', 255]
 	commands = [Command.ping(), Command.echo(binary)]
-	binary_transport : Execute.Transport(_, _)
+	binary_transport : Execute.ByteIo(_, _)
 	binary_transport = {
 		write_all!: |bytes| if bytes == Command.encode_pipeline(commands) {
 			Ok({})
@@ -378,7 +378,7 @@ test_migrated_regressions! = |_| {
 		_ => return fail("batch lost wire ordering or arbitrary binary values")
 	}
 	for response in ["-ERR rejected\r\n", ":1\r\n"] {
-		transport : Execute.Transport(_, _)
+		transport : Execute.ByteIo(_, _)
 		transport = {
 			write_all!: |_| Ok({}),
 			read!: |limit| if limit == 17 {
@@ -394,7 +394,7 @@ test_migrated_regressions! = |_| {
 			Err(ReplyDecodeFailure(UnexpectedReply({ actual: Resp.Integer(1), expected: OkayReply }))) => {}
 			_ => return fail("server and semantic failures were conflated with transport failure")
 		}
-		following : Execute.Transport(_, _)
+		following : Execute.ByteIo(_, _)
 		following = {
 			write_all!: |_| Ok({}),
 			read!: |limit| if limit == 17 {
@@ -424,7 +424,7 @@ test_migrated_regressions! = |_| {
 ## I/O at all.
 test_handshake! : {} => Try({}, [ContractFailed(Str), ..])
 test_handshake! = |_| {
-	okay : Execute.Transport(_, _)
+	okay : Execute.ByteIo(_, _)
 	okay = {
 		write_all!: |_| Ok({}),
 		read!: |_limit| Ok(Data("+OK\r\n".to_utf8())),
@@ -439,7 +439,7 @@ test_handshake! = |_| {
 		Err(error) => return fail("valid handshake failed: ${Str.inspect(error)}")
 	}
 
-	rejecting : Execute.Transport(_, _)
+	rejecting : Execute.ByteIo(_, _)
 	rejecting = {
 		write_all!: |_| Ok({}),
 		read!: |_limit| Ok(Data("-WRONGPASS invalid password\r\n".to_utf8())),
@@ -450,7 +450,7 @@ test_handshake! = |_| {
 		other => return fail("rejected AUTH surfaced as ${Str.inspect(other)}")
 	}
 
-	silent : Execute.Transport(_, _)
+	silent : Execute.ByteIo(_, _)
 	silent = {
 		write_all!: |_| Err(MustNotWrite),
 		read!: |_limit| Err(MustNotRead),

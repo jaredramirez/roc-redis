@@ -38,7 +38,7 @@ import redis.Bytes
 import redis.Client
 import redis.Commands
 import redis.Config
-import redis.Transport
+import redis.ByteIo
 
 # Create a redi client. Client contains many fields with default values, but
 # since we are not overriding any of those values, we just leave it empty.
@@ -50,14 +50,14 @@ main! = |_args| {
 	stream = Tcp.connect!("127.0.0.1", 6379, 2_000)
 		? |error| ExampleFailed("connect: ${Str.inspect(error)}")
 
-  # Create a "transport" that reads/writes to the stream
-	transport = Transport.from_bytes_io({
+  # Create a ByteIo that reads and writes over the stream
+	byte_io = ByteIo.from_empty_eof({
 		read_bytes!: |max_bytes| stream.read_up_to!(max_bytes, 2_000),
 		write_all!: |bytes| stream.write!(bytes, 2_000),
 	})
 
   # Create a re-usable connection that knows how to do IO via the transport
-	connection = client.connect!(transport)
+	connection = client.connect!(byte_io)
 		? |_| ExampleFailed("Redis handshake failed")
 
   # Read a value
@@ -86,13 +86,13 @@ main! = |_args| {
 ## Bring your own transport
 
 Your application owns the socket, TLS, deadlines, and exclusive access. This
-package needs only two effects, `read!` and `write_all!`. `Transport.from_bytes_io`
+package needs only two effects, `read!` and `write_all!`. `ByteIo.from_empty_eof`
 wraps a raw byte reader and writer into a transport that's used to create a connection.
 
 `Client.{ config }` holds your configuration and session policy (set `auth`
-and `select_db`). `client.connect!(transport)` runs the AUTH/SELECT handshake
+and `select_db`). `client.connect!(byte_io)` runs the AUTH/SELECT handshake
 and returns a ready `Connection`. For pooling, `client.attach` binds a reused
-socket without a handshake and `client.handshake!` initializes a freshly one.
+socket without a handshake and `client.handshake!` initializes a freshly dialed one.
 See the [minimal Zig pooling example](examples/pooling/README.md) to see how
 platform-owned pooling could work.
 

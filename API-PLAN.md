@@ -1,7 +1,7 @@
 # API design and implementation status
 
 The reviewed API is implemented, extended with a `Client` connection factory, a
-first-class `Transport`, an infallible refinement-typed `Config`, and the
+first-class `ByteIo`, an infallible refinement-typed `Config`, and the
 `Connect`→`Session` command-family rename that freed `connect` for
 `Client.connect!`. Adding a public client/session value deliberately reverses the
 original decision to ship none initially.
@@ -21,7 +21,7 @@ original decision to ship none initially.
   with Positive.from_u64 before applying it.
 - Client holds config plus session policy (auth, database) and mints
   connections: attach (pure bind), handshake! (AUTH/SELECT), and connect! (both).
-  Connection is { config, transport }; Transport.new / Transport.from_bytes_io
+  Connection is { config, transport }; ByteIo.new / ByteIo.from_empty_eof
   build the two-effect byte transport.
 - Bytes and NonEmptyBytes accept literals; binary payloads need no UTF-8
   validation. Reply.utf8 is explicit when text is wanted.

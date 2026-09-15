@@ -14,7 +14,7 @@ Neither owns a transport.
 | `redis.Command` | Binary command construction and encoding | `package/Command.roc` |
 | `redis.Request`, `redis.Batch`, `redis.NoReply` | Plans for one reply, a batch, or suppressed replies | Corresponding package modules |
 | `redis.Execute` | Validated exchange using supplied effectful functions; `Execute.disposition` classifies reuse/discard | `package/Execute.roc` |
-| `redis.Transport` | Constructors (`new`, `from_bytes_io`) for the two-effect byte transport | `package/Transport.roc` |
+| `redis.ByteIo` | Constructors (`new`, `from_empty_eof`) for the two-effect byte stream | `package/ByteIo.roc` |
 | `redis.Connection` | A bound `{ config, transport }` with `request!` and `batch!`; `Connection.open` builds one | `package/Connection.roc` |
 | `redis.Client` | Config plus session policy; mints connections via `attach`, `handshake!`, and `connect!` | `package/Client.roc` |
 | `redis.Config` | Pure settings builder; `build` is total (scalar limits are validated positives) | `package/Config.roc` |

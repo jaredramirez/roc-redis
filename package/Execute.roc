@@ -12,7 +12,7 @@ import Resp
 Execute :: [].{
 
 	Read : [Data(List(U8)), End]
-	Transport(read_err, write_err) : {
+	ByteIo(read_err, write_err) : {
 		read! : U64 => Try(Read, read_err),
 		write_all! : List(U8) => Try({}, write_err),
 	}
@@ -45,7 +45,7 @@ Execute :: [].{
 
 	## Rejection leaves the stream untouched. Server/semantic errors follow a
 	## complete reply and leave framing aligned. They do not undo command effects.
-	request! : Config.Config, Request.Request(value, decode_err), Transport(read_err, write_err) => Try(value, Error(read_err, write_err, decode_err))
+	request! : Config.Config, Request.Request(value, decode_err), ByteIo(read_err, write_err) => Try(value, Error(read_err, write_err, decode_err))
 	request! = |config, request, transport| {
 		responses = exchange!(config, [request.command()], transport) ? |failure| match failure {
 			RequestRejected(details) => RequestRejected(details)
@@ -62,7 +62,7 @@ Execute :: [].{
 		}
 	}
 
-	batch! : Config.Config, Batch.Batch(value, decode_err), Transport(read_err, write_err) => Try(value, [RequestRejected(ValidationError), ExchangeFailed(ExchangeError(read_err, write_err)), BatchDecodeFailure(decode_err), ReplyCountMismatch({ expected : U64, actual : U64 })])
+	batch! : Config.Config, Batch.Batch(value, decode_err), ByteIo(read_err, write_err) => Try(value, [RequestRejected(ValidationError), ExchangeFailed(ExchangeError(read_err, write_err)), BatchDecodeFailure(decode_err), ReplyCountMismatch({ expected : U64, actual : U64 })])
 	batch! = |config, batch, transport| {
 		responses = exchange!(config, batch.commands(), transport) ? |failure| match failure {
 			RequestRejected(details) => RequestRejected(details)
@@ -135,7 +135,7 @@ prepare = |config, commands|
 		)
 	}
 
-exchange! : Config.Config, List(Command.Command), Execute.Transport(read_err, write_err) => Try(List(Resp.Resp), [RequestRejected(Execute.ValidationError), ExchangeFailed(Execute.ExchangeError(read_err, write_err))])
+exchange! : Config.Config, List(Command.Command), Execute.ByteIo(read_err, write_err) => Try(List(Resp.Resp), [RequestRejected(Execute.ValidationError), ExchangeFailed(Execute.ExchangeError(read_err, write_err))])
 exchange! = |config, commands, transport| {
 	encoded = prepare(config, commands).map_err(|error| RequestRejected(error))?
 	if commands.is_empty() {
@@ -147,7 +147,7 @@ exchange! = |config, commands, transport| {
 		.map_err(|error| ExchangeFailed(error))
 }
 
-read_responses! : Decoder.Decoder, U64, List(Resp.Resp), Config.Config, U64, Execute.Transport(read_err, write_err) => Try(List(Resp.Resp), Execute.ExchangeError(read_err, write_err))
+read_responses! : Decoder.Decoder, U64, List(Resp.Resp), Config.Config, U64, Execute.ByteIo(read_err, write_err) => Try(List(Resp.Resp), Execute.ExchangeError(read_err, write_err))
 read_responses! = |decoder, expected, previous, config, remaining, transport| {
 	var $decoder = decoder
 	var $responses = previous

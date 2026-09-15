@@ -8,13 +8,13 @@ import pf.Tcp
 import redis.Commands
 import redis.Connection
 import redis.Client
-import redis.Transport
+import redis.ByteIo
 import redis.Execute
 
 client = Client.{}
 
-transport_for : Tcp.Stream -> Execute.Transport(Tcp.Error, Tcp.Error)
-transport_for = |stream| Transport.from_bytes_io({
+transport_for : Tcp.Stream -> Execute.ByteIo(Tcp.Error, Tcp.Error)
+transport_for = |stream| ByteIo.from_empty_eof({
 	read_bytes!: |max_bytes| stream.read_up_to!(max_bytes, 2_000),
 	write_all!: |bytes| stream.write!(bytes, 2_000),
 })
